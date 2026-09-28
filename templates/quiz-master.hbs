@@ -1,0 +1,678 @@
+<div class="quiz-master-panel">
+    {{!-- Header --}}
+    <div class="qm-header">
+        <h3><i class="fas fa-trophy"></i> {{quizName}}</h3>
+        <span class="qm-state-badge">{{stateLabel}}</span>
+    </div>
+
+    {{#unless (eq state "quiz-end")}}
+    {{#if roundTimeline.length}}
+    <div class="round-timeline {{#if showFullRoundMap}}full{{/if}}">
+        {{#each roundTimeline}}
+        <button type="button" class="rt-pill {{this.status}} {{#if this.isPeeked}}peeked{{/if}}"
+            data-action="peek-round" data-round-index="{{this.index}}"
+            title="{{this.name}}">
+            <span class="rt-num">R{{this.number}}</span>
+            <span class="rt-name">{{this.name}}</span>
+            <span class="rt-meta"><i class="fas {{this.typeIcon}}"></i> {{this.questionCount}}Q</span>
+        </button>
+        {{/each}}
+    </div>
+    {{#if peekedRound}}
+    <div class="gm-round-peek">
+        <div class="rp-head">
+            <span class="rp-label">R{{peekedRound.number}}</span>
+            <span class="rp-name">{{peekedRound.name}}</span>
+            <span class="rp-type">{{peekedRound.typeLabel}}</span>
+        </div>
+        <ol class="rp-questions">
+            {{#each peekedRound.questions}}
+            <li>
+                <span class="rp-qnum">Q{{this.number}}</span>
+                <span class="rp-qtext">{{this.text}}</span>
+                {{#if this.answer}}<span class="rp-qans">{{this.answer}}</span>{{/if}}
+            </li>
+            {{/each}}
+        </ol>
+    </div>
+    {{/if}}
+    {{#if nextRoundPreview}}
+    {{#if showFullRoundMap}}
+    <div class="gm-next-preview">
+        <span class="next-label">Up next:</span>
+        <span class="next-text">{{nextRoundPreview}}</span>
+    </div>
+    {{/if}}
+    {{/if}}
+    {{/if}}
+    {{/unless}}
+
+    {{!-- Idle (quiz loaded, not yet started) --}}
+    {{#if (eq state "idle")}}
+    <div class="qm-section qm-start-section">
+        <p>{{totalRounds}} rounds on the card.</p>
+        {{#if prizeTiers.length}}
+        <div class="prize-preview prize-stakes">
+            <h4>Stakes</h4>
+            <div class="prize-card-row">
+            {{#each prizeTiers}}
+            <div class="prize-card {{this.tier}} {{this.type}} {{#if this.mystery}}mystery{{/if}}">
+                <span class="pc-tier">{{this.tierLabel}}</span>
+                <div class="pc-body">
+                    <span class="pc-label">{{this.label}}</span>
+                    {{#if this.goldLabel}}<span class="pc-gold"><i class="fas fa-coins"></i> {{this.goldLabel}}</span>{{/if}}
+                </div>
+                <div class="pc-art {{#if this.items.length}}pc-art-stack{{/if}}">
+                    {{#if this.items.length}}
+                    {{#each this.items}}
+                    {{#if this.mystery}}
+                    <img src="{{this.img}}" alt="" />
+                    {{else}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.uuid}}" data-tooltip="{{this.name}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{/if}}
+                    {{/each}}
+                    {{else}}
+                    {{#if this.canInspect}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.itemUuid}}" data-tooltip="{{this.itemName}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{else}}
+                    <img src="{{this.img}}" alt="" />
+                    {{/if}}
+                    {{/if}}
+                </div>
+            </div>
+            {{/each}}
+            </div>
+        </div>
+        {{/if}}
+        <button data-action="start-quiz" class="btn-primary btn-large">
+            <i class="fas fa-play"></i> Start Quiz
+        </button>
+    </div>
+    {{/if}}
+
+    {{!-- Quiz started, pick first round --}}
+    {{#if (eq state "running")}}
+    <div class="qm-section qm-start-section">
+        <p>{{totalRounds}} rounds on the card.</p>
+        {{#if prizeTiers.length}}
+        <div class="prize-preview prize-stakes">
+            <h4>Stakes</h4>
+            <div class="prize-card-row">
+            {{#each prizeTiers}}
+            <div class="prize-card {{this.tier}} {{this.type}} {{#if this.mystery}}mystery{{/if}}">
+                <span class="pc-tier">{{this.tierLabel}}</span>
+                <div class="pc-body">
+                    <span class="pc-label">{{this.label}}</span>
+                    {{#if this.goldLabel}}<span class="pc-gold"><i class="fas fa-coins"></i> {{this.goldLabel}}</span>{{/if}}
+                </div>
+                <div class="pc-art {{#if this.items.length}}pc-art-stack{{/if}}">
+                    {{#if this.items.length}}
+                    {{#each this.items}}
+                    {{#if this.mystery}}
+                    <img src="{{this.img}}" alt="" />
+                    {{else}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.uuid}}" data-tooltip="{{this.name}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{/if}}
+                    {{/each}}
+                    {{else}}
+                    {{#if this.canInspect}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.itemUuid}}" data-tooltip="{{this.itemName}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{else}}
+                    <img src="{{this.img}}" alt="" />
+                    {{/if}}
+                    {{/if}}
+                </div>
+            </div>
+            {{/each}}
+            </div>
+        </div>
+        {{/if}}
+        <button data-action="next-round" class="btn-primary btn-large">
+            <i class="fas fa-play"></i> Start Round 1
+        </button>
+    </div>
+    {{/if}}
+
+    {{!-- Round Intro --}}
+    {{#if (eq state "round-intro")}}
+    <div class="qm-section">
+        <div class="round-intro-card">
+            <span class="round-counter">Round {{math roundIndex "+" 1}} / {{totalRounds}}</span>
+            <h4>{{round.name}}</h4>
+            <div class="round-meta">
+                <span class="tag-chip">{{round.tag}}</span>
+                <span>{{round.questions.length}} questions</span>
+                <span>{{round.pointsPerQuestion}} pts</span>
+            </div>
+        </div>
+        <button data-action="next-question" class="btn-primary btn-large">
+            <i class="fas fa-arrow-right"></i> First Question
+        </button>
+    </div>
+    {{/if}}
+
+    {{!-- Active Question Phase --}}
+    {{#if (eq state "question")}}
+    <div class="qm-section">
+        {{#if questionStrip.length}}
+        <div class="question-strip gm-strip {{#if stripDense}}dense{{/if}}">
+            {{#each questionStrip}}
+            <button class="qs-pill {{this.status}} {{#if this.isPeeked}}peeked{{/if}}"
+                {{#if (eq this.status "asked")}}data-action="peek-question" data-question-index="{{this.index}}"{{/if}}
+                {{#unless (eq this.status "asked")}}disabled{{/unless}}
+                title="{{this.text}}">
+                <span class="qs-label">Q{{this.number}}</span>
+                {{#if (eq this.status "asked")}}<span class="qs-count">{{this.answerCount}}/{{this.totalPlayers}}</span>{{/if}}
+                {{#if (eq this.status "current")}}<span class="qs-count">{{this.answerCount}}/{{this.totalPlayers}}</span>{{/if}}
+            </button>
+            {{/each}}
+        </div>
+        {{#if peekedQuestion}}
+        <div class="gm-peek-card">
+            <span class="peek-label">Q{{peekedQuestion.number}}</span>
+            <span class="peek-text">{{peekedQuestion.text}}</span>
+            <span class="peek-answers">{{peekedQuestion.answerCount}}/{{peekedQuestion.totalPlayers}}</span>
+        </div>
+        {{/if}}
+        {{#if nextQuestionPreview}}
+        <div class="gm-next-preview">
+            <span class="next-label">Next:</span>
+            <span class="next-text">{{nextQuestionPreview}}</span>
+        </div>
+        {{/if}}
+        {{/if}}
+
+        <div class="qm-question-display">
+            <span class="q-counter">Q{{math questionIndex "+" 1}} / {{totalQuestions}}</span>
+            <p class="q-text">{{question.text}}</p>
+            {{#if (eq round.type "picture")}}
+            {{#if question.media}}
+            <img src="{{question.media}}" class="q-media" />
+            {{/if}}
+            {{/if}}
+        {{#if optionsList}}
+            <div class="qm-options-preview">
+                {{#each optionsList}}
+                <div class="qm-option {{#if this.isCorrect}}correct{{/if}}">
+                    <span class="option-letter">{{this.letter}}</span>
+                    {{this.text}}
+                </div>
+                {{/each}}
+            </div>
+        {{/if}}
+        </div>
+
+        {{!-- Last-few-minutes closer: optional, GM-started --}}
+        <div class="qm-closer">
+            {{#if timerActive}}
+            <div class="qm-timer closer-running">
+                <span class="closer-label">Last few minutes</span>
+                <div class="timer-bar">
+                    <div class="timer-bar-fill" style="width: {{math (math timerRemaining "/" timerTotal) "*" 100}}%"></div>
+                </div>
+                <span class="timer-label">{{timerClock}}</span>
+            </div>
+            {{else}}
+            <div class="closer-start">
+                <span class="closer-hint">No clock until you start one. This closes the round.</span>
+                <div class="closer-presets">
+                    {{#each closerPresets}}
+                    <button type="button" data-action="start-closer" data-seconds="{{this.seconds}}" class="btn-secondary closer-preset">
+                        {{this.label}} left
+                    </button>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="qm-answer-status">
+            <i class="fas fa-users"></i> {{answeredCount}} / {{activePlayerCount}} answered
+            {{#if allAnswered}}{{#if (gt activePlayerCount 0)}}<span class="all-in">All in!</span>{{/if}}{{/if}}
+        </div>
+
+        {{#if playerRoster.length}}
+        <div class="qm-player-roster {{#if rosterCompact}}roster-compact{{/if}}">
+            {{#each playerRoster}}
+            <span class="roster-chip {{#if this.answered}}answered{{else}}waiting{{/if}}" title="{{this.name}}">
+                <span class="roster-dot" style="background: {{this.color}}"></span>
+                {{#if ../rosterCompact}}
+                <span class="roster-name">{{this.initial}}</span>
+                {{else}}
+                <span class="roster-name">{{this.name}}</span>
+                {{/if}}
+                {{#if this.answered}}<i class="fas fa-check roster-check"></i>{{/if}}
+            </span>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <div class="qm-controls">
+            {{#if allQuestionsAsked}}
+            <button data-action="lock-round" class="btn-primary btn-large btn-lock {{#if lockWarningActive}}warning-active{{/if}}">
+                {{#if lockWarningActive}}
+                <i class="fas fa-lock"></i> Lock Now
+                {{else}}
+                <i class="fas fa-lock"></i> Pens Down
+                {{/if}}
+            </button>
+            {{else}}
+            <button data-action="next-question" class="btn-primary">
+                <i class="fas fa-arrow-right"></i> Next Question
+            </button>
+            <button data-action="skip-question" class="btn-secondary" title="Skip this question">
+                <i class="fas fa-forward"></i> Skip
+            </button>
+            <button data-action="lock-round" class="btn-secondary btn-lock {{#if lockWarningActive}}warning-active{{/if}}" title="Lock answers and start marking">
+                {{#if lockWarningActive}}
+                <i class="fas fa-lock"></i> Lock Now
+                {{else}}
+                <i class="fas fa-lock"></i> Pens Down
+                {{/if}}
+            </button>
+            {{/if}}
+            {{#if timerActive}}
+            <button data-action="toggle-pause" class="btn-secondary" title="Hold the last-few-minutes clock">
+                <i class="fas {{#if paused}}fa-play{{else}}fa-pause{{/if}}"></i>
+                {{#if paused}}Resume{{else}}Hold{{/if}}
+            </button>
+            <button data-action="timer-extend" class="btn-secondary" title="Add one minute">
+                <i class="fas fa-clock"></i> +1 min
+            </button>
+            {{/if}}
+        </div>
+    </div>
+    {{/if}}
+
+    {{!-- Marking Phase --}}
+    {{#if (eq state "marking")}}
+    <div class="qm-section qm-marking-section">
+
+        {{#if hasPendingAdjudications}}
+        <div class="pending-adjudication-banner">
+            <div class="pab-header">
+                <i class="fas fa-gavel"></i>
+                <span>{{pendingAdjudications.length}} pending review{{#if (gt pendingAdjudications.length 1)}}s{{/if}}</span>
+            </div>
+            {{#each pendingAdjudications}}
+            <div class="pab-item pab-{{this.type}}">
+                <span class="pab-question">Q{{this.questionNumber}}</span>
+                <span class="pab-name">{{this.name}}</span>
+                <span class="pab-answer" title="{{this.answer}}">{{this.answer}}</span>
+                <span class="pab-type-label">{{#if (eq this.type "appeal")}}Appeal{{else}}Close match{{/if}}</span>
+                <div class="pab-actions">
+                    <button class="btn-pab-accept" data-action="adjudicate"
+                        data-user-id="{{this.userId}}"
+                        data-question-index="{{this.questionIndex}}"
+                        data-correct="true">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                    <button class="btn-pab-reject" data-action="adjudicate"
+                        data-user-id="{{this.userId}}"
+                        data-question-index="{{this.questionIndex}}"
+                        data-correct="false">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if currentStep}}
+        <div class="marking-hero">
+            <div class="marking-hero-header">
+                <span class="marking-q-label">Q{{currentStep.questionNumber}}</span>
+                <span class="marking-progress">{{markingIndex}} / {{markingTotal}} marked</span>
+            </div>
+            <p class="marking-q-text">{{currentStep.questionText}}</p>
+            <div class="marking-correct-answer">
+                <span class="correct-label"><i class="fas fa-check-circle"></i> Correct:</span>
+                <span class="correct-text">{{currentStep.correctAnswer}}</span>
+            </div>
+
+            {{#if markingSummary}}
+            <div class="marking-summary-line">
+                <span class="ms-correct">{{markingSummary.correctCount}}/{{markingSummary.totalCount}} correct</span>
+                {{#if (gt markingSummary.probableCount 0)}}
+                <span class="ms-probable">{{markingSummary.probableCount}} close match{{#if (gt markingSummary.probableCount 1)}}es{{/if}}</span>
+                {{/if}}
+                {{#if (gt markingSummary.timedOutCount 0)}}
+                <span class="ms-timeout">{{markingSummary.timedOutCount}} timed out</span>
+                {{/if}}
+            </div>
+            {{/if}}
+
+            <div class="marking-player-results">
+                {{#each currentStep.playerResults}}
+                <div class="marking-result-row {{#if this.correct}}correct{{else}}incorrect{{/if}} {{#if this.adjudicated}}adjudicated{{/if}} {{#if this.appealed}}appealed{{/if}} {{#if (eq this.confidence "probable")}}probable{{/if}}">
+                    <span class="mpr-name">{{this.name}}</span>
+                    <span class="mpr-answer" title="{{this.answer}}">
+                        {{#if this.timedOut}}<em>No answer</em>{{else}}{{this.answer}}{{/if}}
+                        {{#if this.fuzzy}}<span class="fuzzy-badge" title="Close match"><i class="fas fa-circle-half-stroke"></i> close</span>{{/if}}
+                        {{#if this.appealed}}<span class="appeal-badge" title="Appealed"><i class="fas fa-hand-paper"></i></span>{{/if}}
+                    </span>
+                    <span class="mpr-points">{{#if this.correct}}+{{this.points}}{{else}}–{{/if}}</span>
+                    {{#if ../canAdjudicate}}
+                    <div class="adjudicate-btns">
+                        {{#unless this.timedOut}}
+                            {{#unless this.correct}}
+                            <button class="adj-btn adj-accept" data-action="adjudicate"
+                                data-user-id="{{this.userId}}"
+                                data-question-index="{{../currentStep.questionIndex}}"
+                                data-correct="true" title="Accept">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {{/unless}}
+                            {{#if this.correct}}
+                            <button class="adj-btn adj-override" data-action="adjudicate"
+                                data-user-id="{{this.userId}}"
+                                data-question-index="{{../currentStep.questionIndex}}"
+                                data-correct="false" title="Override">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {{/if}}
+                        {{/unless}}
+                        {{#if this.adjudicated}}<span class="adj-done" title="Adjudicated"><i class="fas fa-gavel"></i></span>{{/if}}
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+
+            {{#if canAdjudicate}}
+            <div class="bulk-adj-row">
+                {{#if hasProbable}}
+                <button data-action="bulk-accept" data-question-index="{{currentStep.questionIndex}}" class="btn-secondary">
+                    <i class="fas fa-check-double"></i> Accept All Close Matches
+                </button>
+                {{/if}}
+                {{#if hasAppeals}}
+                <button data-action="bulk-accept-appeals" data-question-index="{{currentStep.questionIndex}}" class="btn-secondary">
+                    <i class="fas fa-hand-paper"></i> Accept All Appeals
+                </button>
+                {{/if}}
+            </div>
+            {{/if}}
+
+            <div class="marking-controls-row">
+                <button data-action="toggle-marking-overview" class="btn-secondary">
+                    <i class="fas fa-th"></i> Round Overview
+                </button>
+                <button data-action="mark-next" class="btn-primary btn-large">
+                    {{#if (gte markingIndex markingTotal)}}
+                    <i class="fas fa-flag-checkered"></i> Finish Marking
+                    {{else}}
+                    <i class="fas fa-arrow-right"></i> Reveal Next Answer
+                    {{/if}}
+                </button>
+            </div>
+        </div>
+
+        {{#if showMarkingOverview}}
+        <div class="marking-overview-panel">
+            {{#if markingMatrix.hasData}}
+            <div class="mo-grid">
+                <table class="mo-table">
+                    <thead>
+                        <tr>
+                            <th class="mo-q-col"></th>
+                            <th class="mo-pct-col">%</th>
+                            {{#each markingMatrix.players}}
+                            <th class="mo-player-col" title="{{this.name}}">{{this.shortName}}</th>
+                            {{/each}}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each markingMatrix.questions}}
+                        <tr class="{{#unless this.revealed}}mo-unrevealed{{/unless}}">
+                            <td class="mo-q-label">Q{{this.number}}</td>
+                            {{#if this.revealed}}
+                            <td class="mo-pct">{{this.correctPct}}</td>
+                            {{#each this.playerResults}}
+                            <td class="mo-cell mo-{{this.state}}">
+                                {{#if (eq this.state "correct")}}<i class="fas fa-check"></i>{{else if (eq this.state "incorrect")}}<i class="fas fa-times"></i>{{else if (eq this.state "timeout")}}–{{else if (eq this.state "probable")}}~{{else}}·{{/if}}
+                            </td>
+                            {{/each}}
+                            {{else}}
+                            <td class="mo-pending" colspan="99">...</td>
+                            {{/if}}
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                    <tfoot>
+                        <tr class="mo-totals">
+                            <td></td>
+                            <td></td>
+                            {{#each markingMatrix.players}}
+                            <td class="mo-player-total" title="{{this.name}}: {{this.roundCorrect}} correct, {{this.roundScore}} pts">
+                                {{this.roundCorrect}} / {{this.roundScore}}
+                            </td>
+                            {{/each}}
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {{else}}
+            <p class="mo-empty">No questions revealed yet.</p>
+            {{/if}}
+        </div>
+        {{/if}}
+        {{else}}
+        <div class="marking-start">
+            <p><i class="fas fa-lock"></i> Answers locked. Ready to mark.</p>
+            <button data-action="mark-next" class="btn-primary btn-large">
+                <i class="fas fa-eye"></i> Reveal First Answer
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if pastLog.length}}
+        <div class="marking-log">
+            <div class="marking-log-label">Already revealed</div>
+            {{#each pastLog}}
+            <div class="log-entry">
+                <div class="log-entry-header">
+                    <span class="log-q-label">Q{{this.questionNumber}}</span>
+                    <span class="log-q-text" title="{{this.questionText}}">{{this.questionText}}</span>
+                    <span class="log-correct-answer">{{this.correctAnswer}}</span>
+                </div>
+                <div class="log-player-answers">
+                    {{#each this.playerResults}}
+                    <span class="log-player-chip {{#if this.correct}}correct{{else}}incorrect{{/if}} {{#if this.appealed}}appealed{{/if}}" title="{{this.name}}: {{#if this.timedOut}}No answer{{else}}{{this.answer}}{{/if}}">
+                        <span class="log-chip-name">{{this.name}}</span>
+                        <span class="log-chip-answer">{{#if this.timedOut}}–{{else}}{{this.answer}}{{/if}}</span>
+                        <i class="fas {{#if this.correct}}fa-check{{else}}fa-times{{/if}}"></i>
+                        {{#if ../canAdjudicate}}
+                        {{#unless this.timedOut}}
+                        {{#unless this.correct}}
+                        <button class="adj-btn adj-accept tiny" data-action="adjudicate"
+                            data-user-id="{{this.userId}}"
+                            data-question-index="{{../this.questionIndex}}"
+                            data-correct="true" title="Accept">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {{/unless}}
+                        {{#if this.correct}}
+                        <button class="adj-btn adj-override tiny" data-action="adjudicate"
+                            data-user-id="{{this.userId}}"
+                            data-question-index="{{../this.questionIndex}}"
+                            data-correct="false" title="Override">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        {{/if}}
+                        {{/unless}}
+                        {{/if}}
+                    </span>
+                    {{/each}}
+                </div>
+                {{#if this.canAdjudicate}}
+                {{#if this.hasProbable}}
+                <button data-action="bulk-accept" data-question-index="{{this.questionIndex}}" class="btn-secondary tiny">
+                    Accept Close Matches
+                </button>
+                {{/if}}
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+    </div>
+    {{/if}}
+
+    {{!-- Round End --}}
+    {{#if (eq state "round-end")}}
+    <div class="qm-section qm-round-summary">
+        <h4><i class="fas fa-flag-checkered"></i> Round {{math roundIndex "+" 1}} Complete</h4>
+
+        {{#if roundSummary}}
+        <div class="round-summary-card">
+            <div class="rs-player-list">
+                {{#each roundSummary.playerScores}}
+                <div class="rs-player-row">
+                    <span class="rs-rank">{{math @index "+" 1}}</span>
+                    <span class="rs-name" style="color: {{this.color}}">{{this.name}}</span>
+                    <span class="rs-round-score">{{this.roundCorrect}}/{{../roundSummary.totalQuestions}} correct</span>
+                    <span class="rs-round-pts">+{{this.roundScore}} pts</span>
+                </div>
+                {{/each}}
+            </div>
+
+            <div class="rs-highlights">
+                {{#if roundSummary.hardestQuestion}}
+                <div class="rs-highlight hard">
+                    <i class="fas fa-skull"></i>
+                    <span>Hardest: Q{{roundSummary.hardestQuestion.number}} ({{roundSummary.hardestQuestion.correctPct}}% correct)</span>
+                </div>
+                {{/if}}
+                {{#if roundSummary.easiestQuestion}}
+                <div class="rs-highlight easy">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span>Easiest: Q{{roundSummary.easiestQuestion.number}} ({{roundSummary.easiestQuestion.correctPct}}% correct)</span>
+                </div>
+                {{/if}}
+            </div>
+
+            <div class="rs-leaderboard">
+                <div class="rs-lb-label">Cumulative Standings</div>
+                {{#each roundSummary.playerScores}}
+                <div class="rs-lb-row">
+                    <span class="rs-lb-name" style="color: {{this.color}}">{{this.name}}</span>
+                    <span class="rs-lb-score">{{this.cumulativeScore}} pts</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="qm-controls">
+            <button data-action="show-teaser" class="btn-secondary">
+                <i class="fas fa-eye-slash"></i> Teaser Standings
+            </button>
+            {{#if isLastRound}}
+            <button data-action="next-round" class="btn-primary btn-large">
+                <i class="fas fa-crown"></i> Final Results
+            </button>
+            {{else}}
+            <button data-action="next-round" class="btn-primary btn-large">
+                <i class="fas fa-arrow-right"></i> Next Round
+            </button>
+            {{/if}}
+        </div>
+    </div>
+    {{/if}}
+
+    {{!-- Quiz End --}}
+    {{#if (eq state "quiz-end")}}
+    <div class="qm-section qm-final">
+        <h3><i class="fas fa-crown"></i> Quiz Complete</h3>
+        {{#if ceremonyCards.length}}
+        <div class="prize-ceremony">
+            {{#each ceremonyCards}}
+            <div class="prize-reveal-card">
+                <span class="prc-rank">#{{this.rank}}</span>
+                <span class="prc-name" style="color: {{this.color}}">{{this.name}}</span>
+                <span class="prc-score">{{this.score}} pts</span>
+                {{#if this.prize}}
+                <div class="prc-art {{#if this.prize.items.length}}prc-art-stack{{/if}}">
+                    {{#if this.prize.items.length}}
+                    {{#each this.prize.items}}
+                    {{#if this.mystery}}
+                    <img src="{{this.img}}" alt="" />
+                    {{else}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.uuid}}" data-tooltip="{{this.name}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{/if}}
+                    {{/each}}
+                    {{else}}
+                    {{#if this.prize.canInspect}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.prize.itemUuid}}" data-tooltip="{{this.prize.itemName}}">
+                        <img src="{{this.prize.img}}" alt="" />
+                    </button>
+                    {{else}}
+                    <img src="{{this.prize.img}}" alt="" />
+                    {{/if}}
+                    {{/if}}
+                </div>
+                <span class="prc-prize">{{this.prize.label}}</span>
+                {{#if this.prize.goldLabel}}<span class="prc-gold"><i class="fas fa-coins"></i> {{this.prize.goldLabel}}</span>{{/if}}
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p>Ready to reveal prizes, last place first.</p>
+        {{/if}}
+        {{#if ceremonyHasMore}}
+        <button data-action="reveal-next-prize" class="btn-primary btn-large">
+            <i class="fas fa-gift"></i> Reveal Next Prize
+        </button>
+        {{else}}
+        {{#if ceremonyTotal}}
+        <p class="waiting-msg">That's the night.</p>
+        {{/if}}
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- GM Scoreboard --}}
+    {{#if (gte scores.length 1)}}
+    {{#unless (eq state "quiz-end")}}
+    <div class="qm-scoreboard">
+        <h4><i class="fas fa-list-ol"></i> Full Scores (GM Only)</h4>
+        <div class="score-list">
+            {{#each scores}}
+            <div class="score-row">
+                <span class="score-rank">#{{this.rank}}</span>
+                <span class="score-name" style="color: {{this.color}}">{{this.name}}</span>
+                <span class="score-correct">{{this.correct}}/{{this.total}}</span>
+                <span class="score-points">{{this.score}} pts</span>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/unless}}
+    {{/if}}
+
+    {{!-- End Quiz Button --}}
+    {{#unless (eq state "idle")}}
+    {{#unless (eq state "quiz-end")}}
+    <div class="qm-footer">
+        <button data-action="end-quiz" class="btn-danger">
+            <i class="fas fa-stop"></i> End Quiz
+        </button>
+    </div>
+    {{/unless}}
+    {{/unless}}
+
+</div>

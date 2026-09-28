@@ -1,0 +1,178 @@
+/* Quiz Night: prizes.css */
+.ionrift-quiz-prizes .window-content {
+    padding: 0;
+    overflow-y: auto;
+    background: var(--ionrift-glass-bg, rgba(15, 15, 20, 0.96)) !important;
+}
+
+.quiz-prizes-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0.75rem 0.85rem 1rem;
+}
+
+.prizes-lede {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(236, 230, 244, 0.9);
+}
+
+.prize-placing {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.55rem 0.6rem 0.65rem;
+    border: 1px solid rgba(255, 200, 100, 0.18);
+    border-radius: 8px;
+    background: rgba(255, 200, 100, 0.05);
+}
+
+.prize-placing.consolation {
+    border-color: rgba(200, 210, 230, 0.22);
+    background: rgba(20, 16, 28, 0.35);
+}
+
+.placing-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.placing-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(255, 200, 100, 0.9);
+}
+
+.placing-fields {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.placing-fields input[type="text"] {
+    flex: 1;
+}
+
+.prize-gold-field-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    width: auto;
+    min-width: 80px;
+    background: rgba(255, 200, 100, 0.06);
+    border: 1px solid rgba(255, 200, 100, 0.2);
+    border-radius: 4px;
+    padding: 0 5px;
+}
+
+.prize-gold-field-compact .prize-mystery-toggle {
+    margin-left: 0.15rem;
+}
+
+.prize-gold-field-compact i {
+    color: rgba(255, 200, 100, 0.6);
+    font-size: 0.65rem;
+}
+
+.prize-gold-field-compact input[type="number"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 3px 0 !important;
+    width: 2.4rem;
+    color: rgba(255, 200, 100, 0.9) !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+
+.prize-mystery-toggle {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.45);
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.prize-drop-zone {
+    min-height: 56px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 0.4rem;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.prize-drop-zone.is-over {
+    border-color: rgba(255, 200, 100, 0.7);
+    background: rgba(255, 200, 100, 0.08);
+}
+
+.drop-hint {
+    margin: 0.35rem 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(236, 230, 244, 0.72);
+}
+
+.prize-item-chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.prize-item-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.3rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.prize-item-chip img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.prize-item-chip span {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    color: rgba(236, 230, 244, 0.94);
+}
+
+.prize-item-chip.is-mystery {
+    outline: 1px dashed rgba(255, 200, 100, 0.35);
+}
+
+.chip-remove {
+    padding: 0.1rem 0.35rem !important;
+    min-height: 0 !important;
+    width: auto !important;
+    background: transparent !important;
+    border: none !important;
+    color: rgba(236, 230, 244, 0.7) !important;
+    box-shadow: none !important;
+}
+
+.chip-remove:hover {
+    color: rgba(255, 130, 200, 0.95) !important;
+}
+
+.placing-note {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgba(255, 200, 100, 0.85);
+}

@@ -1,0 +1,466 @@
+<div class="quiz-player-panel">
+
+    {{!-- Idle / no active quiz --}}
+    {{#if (eq state "idle")}}
+    <div class="qp-section qp-idle">
+        <div class="quiz-intro">
+            <h2><i class="fas fa-trophy"></i> Quiz Night</h2>
+            <p class="waiting-msg">No quiz is running right now. The quizmaster will open one when ready.</p>
+        </div>
+    </div>
+    {{/if}}
+
+    {{!-- Waiting / Lobby --}}
+    {{#if (eq state "waiting")}}
+    <div class="qp-section qp-waiting">
+        {{#if roundInfo}}
+            <div class="round-intro-card">
+                <span class="round-counter">Round {{roundInfo.roundNumber}} / {{roundInfo.totalRounds}}</span>
+                <h3>{{roundInfo.roundName}}</h3>
+                <div class="round-meta">
+                    <span class="tag-chip">{{roundInfo.roundTag}}</span>
+                    <span>{{roundInfo.questionCount}} questions</span>
+                </div>
+            </div>
+            <p class="waiting-msg"><i class="fas fa-hourglass-half"></i> Waiting for the quizmaster...</p>
+        {{else}}
+            <div class="quiz-intro">
+                <h2><i class="fas fa-trophy"></i> {{quizName}}</h2>
+                <p class="waiting-msg">The quiz is about to begin...</p>
+                {{#if prizeTiers.length}}
+                <div class="prize-preview prize-stakes">
+                    <h4>What you're playing for</h4>
+                    <div class="prize-card-row">
+                    {{#each prizeTiers}}
+                    <div class="prize-card {{this.tier}} {{this.type}} {{#if this.mystery}}mystery{{/if}}">
+                        <span class="pc-tier">{{this.tierLabel}}</span>
+                        <div class="pc-body">
+                            <span class="pc-label">{{this.label}}</span>
+                            {{#if this.goldLabel}}<span class="pc-gold"><i class="fas fa-coins"></i> {{this.goldLabel}}</span>{{/if}}
+                        </div>
+                        <div class="pc-art {{#if this.items.length}}pc-art-stack{{/if}}">
+                            {{#if this.items.length}}
+                            {{#each this.items}}
+                            {{#if this.mystery}}
+                            <img src="{{this.img}}" alt="" />
+                            {{else}}
+                            <button type="button" class="prize-item-link" data-prize-uuid="{{this.uuid}}" data-tooltip="{{this.name}}">
+                                <img src="{{this.img}}" alt="" />
+                            </button>
+                            {{/if}}
+                            {{/each}}
+                            {{else}}
+                            {{#if this.canInspect}}
+                            <button type="button" class="prize-item-link" data-prize-uuid="{{this.itemUuid}}" data-tooltip="{{this.itemName}}">
+                                <img src="{{this.img}}" alt="" />
+                            </button>
+                            {{else}}
+                            <img src="{{this.img}}" alt="" />
+                            {{/if}}
+                            {{/if}}
+                        </div>
+                    </div>
+                    {{/each}}
+                    </div>
+                </div>
+                {{/if}}
+            </div>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- Active Question --}}
+    {{#if (eq state "question")}}
+    <div class="qp-section qp-question">
+        {{#if questionStrip.length}}
+        <div class="question-strip">
+            {{#each questionStrip}}
+            <button class="qs-pill {{this.status}} {{#if this.isNavigated}}navigated{{/if}} {{#if this.answered}}has-answer{{/if}}"
+                {{#if this.canNavigate}}data-action="navigate-question" data-question-index="{{this.index}}"{{/if}}
+                {{#unless this.canNavigate}}disabled{{/unless}}
+                title="Q{{this.number}}">
+                Q{{this.number}}
+            </button>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <div class="q-header">
+            <span class="round-label">{{question.roundName}}</span>
+            <span class="q-counter">Q{{question.questionNumber}} / {{question.totalQuestions}}</span>
+            <span class="tag-chip">{{question.roundTag}}</span>
+        </div>
+
+        {{#if timerActive}}
+        <div class="closer-banner">
+            <span class="closer-label">Last few minutes</span>
+            <div class="timer-bar">
+                <div class="timer-bar-fill" style="width: {{math (math timer.remaining "/" timer.total) "*" 100}}%"></div>
+            </div>
+            <span class="timer-label">{{timerClock}}</span>
+        </div>
+        {{/if}}
+        {{#if paused}}<p class="paused-notice"><i class="fas fa-pause"></i> Clock held</p>{{/if}}
+
+        {{#if lockWarning}}
+        <div class="lock-warning-banner">
+            <i class="fas fa-exclamation-triangle"></i> Pens Down in 10 seconds!
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "picture")}}
+        {{#if question.media}}
+        <div class="q-media-container">
+            <img src="{{question.media}}" class="q-media" alt="" onerror="this.classList.add('broken')" />
+        </div>
+        {{/if}}
+        {{/if}}
+
+        <p class="q-text">{{question.text}}</p>
+
+        {{#if (eq question.roundType "text-answer")}}
+        <div class="answer-input">
+            <input type="text" name="text-answer" placeholder="Type your answer..." autofocus />
+            <button data-action="submit-text" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> Submit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "picture")}}
+        <div class="answer-input">
+            <input type="text" name="text-answer" placeholder="What is this?" autofocus />
+            <button data-action="submit-text" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> Submit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "nearest-number")}}
+        <div class="answer-input">
+            <input type="number" name="number-answer" placeholder="Your number..." autofocus />
+            <button data-action="submit-number" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> Submit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "multiple-choice")}}
+        <div class="mc-buttons">
+            {{#each question.options}}
+            <button data-action="select-choice" data-index="{{@index}}" class="mc-btn {{#if (eq @index ../pendingChoice)}}selected{{/if}}">
+                <span class="mc-letter">{{#if (eq @index 0)}}A{{else if (eq @index 1)}}B{{else if (eq @index 2)}}C{{else}}D{{/if}}</span>
+                <span class="mc-text">{{this}}</span>
+            </button>
+            {{/each}}
+        </div>
+        {{#if hasPendingChoice}}
+        <button data-action="confirm-choice" class="btn-primary btn-confirm">
+            <i class="fas fa-check"></i> Confirm
+        </button>
+        {{/if}}
+        {{/if}}
+
+        {{#if (eq question.roundType "true-false")}}
+        <div class="tf-buttons">
+            <button data-action="select-tf" data-value="true" class="tf-btn tf-true {{#if (eq pendingChoice "true")}}selected{{/if}}">
+                <i class="fas fa-check"></i> True
+            </button>
+            <button data-action="select-tf" data-value="false" class="tf-btn tf-false {{#if (eq pendingChoice "false")}}selected{{/if}}">
+                <i class="fas fa-times"></i> False
+            </button>
+        </div>
+        {{#if hasPendingChoice}}
+        <button data-action="confirm-tf" class="btn-primary btn-confirm">
+            <i class="fas fa-check"></i> Confirm
+        </button>
+        {{/if}}
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- Answered --}}
+    {{#if (eq state "answered")}}
+    <div class="qp-section qp-answered">
+        {{#if questionStrip.length}}
+        <div class="question-strip">
+            {{#each questionStrip}}
+            <button class="qs-pill {{this.status}} {{#if this.isNavigated}}navigated{{/if}} {{#if this.answered}}has-answer{{/if}}"
+                {{#if this.canNavigate}}data-action="navigate-question" data-question-index="{{this.index}}"{{/if}}
+                {{#unless this.canNavigate}}disabled{{/unless}}
+                title="Q{{this.number}}">
+                Q{{this.number}}
+            </button>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if question}}
+        <div class="q-header answered-q-header">
+            <span class="round-label">{{question.roundName}}</span>
+            <span class="q-counter">Q{{question.questionNumber}} / {{question.totalQuestions}}</span>
+        </div>
+        <p class="q-text answered-q-text">{{question.text}}</p>
+        {{/if}}
+
+        <div class="answered-confirmation">
+            <i class="fas fa-check-circle answered-icon-inline"></i>
+            <span class="answered-msg">Answer submitted.</span>
+        </div>
+
+        {{#if (eq question.roundType "text-answer")}}
+        <div class="answer-input answer-resubmit">
+            <input type="text" name="text-answer" value="{{myAnswer}}" placeholder="Change your answer..." />
+            <button data-action="submit-text" class="btn-secondary">
+                <i class="fas fa-redo"></i> Resubmit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "picture")}}
+        <div class="answer-input answer-resubmit">
+            <input type="text" name="text-answer" value="{{myAnswer}}" placeholder="Change your answer..." />
+            <button data-action="submit-text" class="btn-secondary">
+                <i class="fas fa-redo"></i> Resubmit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "nearest-number")}}
+        <div class="answer-input answer-resubmit">
+            <input type="number" name="number-answer" value="{{myAnswer}}" placeholder="Change your number..." />
+            <button data-action="submit-number" class="btn-secondary">
+                <i class="fas fa-redo"></i> Resubmit
+            </button>
+        </div>
+        {{/if}}
+
+        {{#if (eq question.roundType "multiple-choice")}}
+        <div class="mc-buttons mc-resubmit">
+            {{#each question.options}}
+            <button data-action="select-choice" data-index="{{@index}}" class="mc-btn {{#if (eq @index ../pendingChoice)}}selected{{else if (eq @index ../myAnswerIndex)}}submitted{{/if}}">
+                <span class="mc-letter">{{#if (eq @index 0)}}A{{else if (eq @index 1)}}B{{else if (eq @index 2)}}C{{else}}D{{/if}}</span>
+                <span class="mc-text">{{this}}</span>
+            </button>
+            {{/each}}
+        </div>
+        {{#if hasPendingChoice}}
+        <button data-action="confirm-choice" class="btn-primary btn-confirm">
+            <i class="fas fa-check"></i> Confirm
+        </button>
+        {{/if}}
+        {{/if}}
+
+        {{#if (eq question.roundType "true-false")}}
+        <div class="tf-buttons tf-resubmit">
+            <button data-action="select-tf" data-value="true" class="tf-btn tf-true {{#if (eq pendingChoice "true")}}selected{{else if (eq myAnswer "true")}}submitted{{/if}}">
+                <i class="fas fa-check"></i> True
+            </button>
+            <button data-action="select-tf" data-value="false" class="tf-btn tf-false {{#if (eq pendingChoice "false")}}selected{{else if (eq myAnswer "false")}}submitted{{/if}}">
+                <i class="fas fa-times"></i> False
+            </button>
+        </div>
+        {{#if hasPendingChoice}}
+        <button data-action="confirm-tf" class="btn-primary btn-confirm">
+            <i class="fas fa-check"></i> Confirm
+        </button>
+        {{/if}}
+        {{/if}}
+
+        {{#if lockWarning}}
+        <div class="lock-warning-banner">
+            <i class="fas fa-exclamation-triangle"></i> Pens Down in 10 seconds!
+        </div>
+        {{/if}}
+        {{#if timerActive}}
+        <div class="closer-banner">
+            <span class="closer-label">Last few minutes</span>
+            <div class="timer-bar">
+                <div class="timer-bar-fill" style="width: {{math (math timer.remaining "/" timer.total) "*" 100}}%"></div>
+            </div>
+            <span class="timer-label">{{timerClock}}</span>
+        </div>
+        {{/if}}
+        <p class="answered-hint">Change your mind any time before pens down.</p>
+        {{#if paused}}<p class="paused-notice"><i class="fas fa-pause"></i> Clock held</p>{{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- Locked --}}
+    {{#if (eq state "locked")}}
+    <div class="qp-section qp-locked">
+        <div class="lock-icon"><i class="fas fa-lock"></i></div>
+        <h3>Pens Down</h3>
+        <p>Answers are locked. The quizmaster will now reveal the answers.</p>
+        {{#if answerSheet.length}}
+        <div class="answer-sheet">
+            <h4>Your answers</h4>
+            {{#each answerSheet}}
+            <div class="answer-sheet-row">
+                <span class="answer-sheet-q">Q{{this.questionNumber}}</span>
+                {{#if this.answer}}
+                <span class="answer-sheet-text">{{this.answer}}</span>
+                <span class="answer-sheet-check">&#10003;</span>
+                {{else}}
+                <span class="answer-sheet-text no-answer">(no answer)</span>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- Marking --}}
+    {{#if (eq state "marking")}}
+    <div class="qp-section qp-marking">
+
+        {{#if myMarkingTally}}
+        <div class="player-marking-tally">
+            <i class="fas fa-star"></i>
+            <span>Your score: {{myMarkingTally.correct}}/{{myMarkingTally.total}} correct, {{myMarkingTally.points}} pts</span>
+        </div>
+        {{/if}}
+
+        {{#if currentMarkingStep}}
+        <div class="player-marking-hero">
+            <div class="pmh-header">
+                <span class="pmh-q-label">Q{{currentMarkingStep.questionNumber}}</span>
+                <span class="pmh-correct">
+                    <i class="fas fa-check-circle"></i> {{currentMarkingStep.correctAnswer}}
+                </span>
+            </div>
+            <p class="pmh-q-text">{{currentMarkingStep.questionText}}</p>
+
+            <div class="pmh-answers">
+                {{#each currentMarkingStep.playerResults}}
+                <div class="pmh-answer-row {{#if this.correct}}correct{{else}}incorrect{{/if}} {{#if (eq this.userId ../userId)}}is-me{{/if}}">
+                    <span class="pmh-player-name">{{this.name}}{{#if (eq this.userId ../userId)}}<span class="self-tag">you</span>{{/if}}</span>
+                    <span class="pmh-answer-text" title="{{this.answer}}">
+                        {{#if this.timedOut}}<em>No answer</em>{{else}}{{this.answer}}{{/if}}
+                        {{#if this.fuzzy}}<span class="fuzzy-badge" title="Close match"><i class="fas fa-circle-half-stroke"></i> close</span>{{/if}}
+                    </span>
+                    <i class="fas {{#if this.correct}}fa-check pmh-correct-icon{{else}}fa-times pmh-wrong-icon{{/if}}"></i>
+                </div>
+                {{/each}}
+            </div>
+
+            {{#if myCurrentResult}}
+            <div class="pmh-my-result {{#if myCurrentResult.correct}}correct{{else}}incorrect{{/if}}">
+                {{#if myCurrentResult.correct}}
+                <i class="fas fa-star"></i> You got it!
+                {{else}}
+                <i class="fas fa-times-circle"></i> Not this one.
+                {{#if ../canAppeal}}
+                <button data-action="appeal" data-question-index="{{currentMarkingStep.questionIndex}}" class="btn-secondary appeal-btn">
+                    <i class="fas fa-hand-paper"></i> I think I was right
+                </button>
+                {{/if}}
+                {{#if myCurrentResult.appealed}}
+                <span class="appeal-pending"><i class="fas fa-gavel"></i> Appeal sent</span>
+                {{/if}}
+                {{/if}}
+            </div>
+            {{/if}}
+        </div>
+
+        {{#if pastMarkingLog.length}}
+        <div class="player-marking-log">
+            {{#each pastMarkingLog}}
+            <div class="pml-entry">
+                <div class="pml-header">
+                    <span class="pml-q-label">Q{{this.questionNumber}}</span>
+                    <span class="pml-q-text" title="{{this.questionText}}">{{this.questionText}}</span>
+                    <span class="pml-correct" title="{{this.correctAnswer}}">{{this.correctAnswer}}</span>
+                </div>
+                <div class="pml-chips">
+                    {{#each this.playerResults}}
+                    <span class="pml-chip {{#if this.correct}}correct{{else}}incorrect{{/if}}" title="{{this.name}}: {{#if this.timedOut}}No answer{{else}}{{this.answer}}{{/if}}">
+                        <span class="pml-chip-name">{{this.name}}</span>
+                        <span class="pml-chip-answer">{{#if this.timedOut}}–{{else}}{{this.answer}}{{/if}}</span>
+                    </span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{else}}
+        <div class="qp-waiting-mark">
+            <p><i class="fas fa-hourglass-half"></i> Marking is about to begin...</p>
+        </div>
+        {{/if}}
+
+    </div>
+    {{/if}}
+
+    {{!-- Round End --}}
+    {{#if (eq state "round-end")}}
+    <div class="qp-section qp-round-end">
+        <h3><i class="fas fa-flag-checkered"></i> Round Complete</h3>
+        {{#if myRoundSummary}}
+        <div class="my-round-recap">
+            <div class="recap-score">
+                <span class="recap-correct">{{myRoundSummary.correct}}</span>
+                <span class="recap-divider">/</span>
+                <span class="recap-total">{{myRoundSummary.total}}</span>
+            </div>
+            <p class="recap-message">{{myRoundSummary.message}}</p>
+        </div>
+        {{/if}}
+        {{#if teaser}}
+        <div class="teaser-card">
+            <p><i class="fas fa-eye-slash"></i> {{teaser}}</p>
+        </div>
+        {{/if}}
+        <p class="waiting-msg">Next round starting soon...</p>
+    </div>
+    {{/if}}
+
+    {{!-- Quiz End --}}
+    {{#if (eq state "quiz-end")}}
+    <div class="qp-section qp-final">
+        <h2><i class="fas fa-crown"></i> Quiz Over!</h2>
+
+        {{#if ceremonyCards.length}}
+        <div class="prize-ceremony">
+            {{#each ceremonyCards}}
+            <div class="prize-reveal-card {{#if (eq this.userId ../userId)}}is-me{{/if}}">
+                <span class="prc-rank">#{{this.rank}}</span>
+                <span class="prc-name" style="color: {{this.color}}">{{this.name}}</span>
+                <span class="prc-score">{{this.score}} pts</span>
+                {{#if this.prize}}
+                <div class="prc-art {{#if this.prize.items.length}}prc-art-stack{{/if}}">
+                    {{#if this.prize.items.length}}
+                    {{#each this.prize.items}}
+                    {{#if this.mystery}}
+                    <img src="{{this.img}}" alt="" />
+                    {{else}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.uuid}}" data-tooltip="{{this.name}}">
+                        <img src="{{this.img}}" alt="" />
+                    </button>
+                    {{/if}}
+                    {{/each}}
+                    {{else}}
+                    {{#if this.prize.canInspect}}
+                    <button type="button" class="prize-item-link" data-prize-uuid="{{this.prize.itemUuid}}" data-tooltip="{{this.prize.itemName}}">
+                        <img src="{{this.prize.img}}" alt="" />
+                    </button>
+                    {{else}}
+                    <img src="{{this.prize.img}}" alt="" />
+                    {{/if}}
+                    {{/if}}
+                </div>
+                <span class="prc-prize">{{this.prize.label}}</span>
+                {{#if this.prize.goldLabel}}<span class="prc-gold"><i class="fas fa-coins"></i> {{this.prize.goldLabel}}</span>{{/if}}
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p class="waiting-msg">Prizes coming up...</p>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>

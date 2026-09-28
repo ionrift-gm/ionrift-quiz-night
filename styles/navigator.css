@@ -1,0 +1,360 @@
+/* Quiz Night: navigator.css. Question strip and round timeline. */
+.question-strip.dense {
+    gap: 0.15rem;
+}
+
+.question-strip.dense .qs-pill {
+    min-width: 1.55rem;
+    padding: 0.1rem 0.22rem;
+}
+
+.question-strip.dense .qs-label {
+    font-size: 0.52rem;
+}
+
+.question-strip.dense .qs-count {
+    font-size: 0.42rem;
+}
+
+.question-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.35rem 0;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    width: 100%;
+}
+
+.qs-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-width: 2rem;
+    height: 1.5rem;
+    padding: 0 0.35rem;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    background: none !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+}
+
+/* Upcoming (grey, not yet asked) */
+.qs-pill.upcoming {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.2);
+    cursor: default;
+}
+
+/* Current (pink highlight, strong indicator) */
+.qs-pill.current {
+    background: rgba(232, 67, 147, 0.25) !important;
+    border-color: rgba(232, 67, 147, 0.7);
+    border-width: 2px;
+    color: rgba(255, 130, 200, 0.95);
+    cursor: default;
+    box-shadow: 0 0 8px rgba(232, 67, 147, 0.3), inset 0 0 4px rgba(232, 67, 147, 0.1) !important;
+    font-weight: 800;
+}
+
+/* Asked but unanswered (dim green outline) */
+.qs-pill.asked {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.5);
+}
+.qs-pill.asked:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Answered (green) */
+.qs-pill.answered,
+.qs-pill.has-answer {
+    background: rgba(80, 200, 120, 0.12) !important;
+    border-color: rgba(80, 200, 120, 0.35);
+    color: rgba(80, 200, 120, 0.9);
+}
+.qs-pill.answered:hover,
+.qs-pill.has-answer:hover {
+    background: rgba(80, 200, 120, 0.2) !important;
+}
+
+/* Navigated (viewing a past question) */
+.qs-pill.navigated {
+    background: rgba(232, 67, 147, 0.15) !important;
+    border-color: rgba(232, 67, 147, 0.45);
+    color: rgba(255, 130, 200, 0.9);
+    box-shadow: 0 0 4px rgba(232, 67, 147, 0.15) !important;
+}
+
+/* GM strip: peeked state */
+.qs-pill.peeked {
+    background: rgba(255, 200, 100, 0.15) !important;
+    border-color: rgba(255, 200, 100, 0.45);
+    color: rgba(255, 200, 100, 0.95);
+}
+
+/* GM strip specific: answer count badge */
+.gm-strip .qs-pill {
+    flex-direction: column;
+    height: auto;
+    min-height: 1.5rem;
+    padding: 0.15rem 0.35rem;
+    gap: 0;
+}
+.qs-label {
+    font-size: 0.6rem;
+    line-height: 1.2;
+}
+.qs-count {
+    font-size: 0.5rem;
+    font-weight: 600;
+    opacity: 0.7;
+    line-height: 1;
+}
+
+/* GM peek card */
+.gm-peek-card {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(255, 200, 100, 0.06);
+    border: 1px solid rgba(255, 200, 100, 0.15);
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+}
+.peek-label {
+    font-weight: 700;
+    color: rgba(255, 200, 100, 0.8);
+    flex-shrink: 0;
+}
+.peek-text {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.peek-answers {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+    font-size: 0.65rem;
+}
+
+/* GM next question preview */
+.gm-next-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.4rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+    font-size: 0.7rem;
+}
+.next-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    font-size: 0.6rem;
+    flex-shrink: 0;
+}
+.next-text {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.round-timeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.round-timeline.full {
+    padding: 0.55rem 0.85rem 0.35rem;
+    gap: 0.4rem;
+}
+
+.rt-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.05rem;
+    min-width: 5.5rem;
+    max-width: 9rem;
+    padding: 0.3rem 0.45rem !important;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    box-shadow: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    text-align: left;
+    line-height: 1.2;
+}
+
+.rt-pill:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.rt-pill.next {
+    border-color: rgba(232, 67, 147, 0.35);
+    background: rgba(232, 67, 147, 0.08) !important;
+    color: rgba(255, 180, 220, 0.85);
+}
+
+.rt-pill.current {
+    border-color: rgba(232, 67, 147, 0.7);
+    border-width: 2px;
+    background: rgba(232, 67, 147, 0.18) !important;
+    color: rgba(255, 130, 200, 0.95);
+    box-shadow: 0 0 8px rgba(232, 67, 147, 0.25) !important;
+}
+
+.rt-pill.done {
+    border-color: rgba(80, 200, 120, 0.25);
+    background: rgba(80, 200, 120, 0.07) !important;
+    color: rgba(80, 200, 120, 0.85);
+}
+
+.rt-pill.peeked {
+    border-color: rgba(255, 200, 100, 0.5);
+    background: rgba(255, 200, 100, 0.1) !important;
+    color: rgba(255, 200, 100, 0.95);
+}
+
+.rt-num {
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.rt-name {
+    font-size: 0.68rem;
+    font-weight: 600;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rt-meta {
+    font-size: 0.55rem;
+    font-weight: 600;
+    opacity: 0.55;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.rt-meta i {
+    font-size: 0.5rem;
+}
+
+.gm-round-peek {
+    margin: 0.35rem 0.75rem 0.45rem;
+    padding: 0.45rem 0.55rem;
+    background: rgba(255, 200, 100, 0.05);
+    border: 1px solid rgba(255, 200, 100, 0.18);
+    border-radius: 6px;
+}
+
+.rp-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+}
+
+.rp-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: rgba(255, 200, 100, 0.85);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.rp-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rp-type {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+.rp-questions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-height: 12rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.rp-questions li {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr auto;
+    gap: 0.35rem;
+    align-items: baseline;
+    font-size: 0.7rem;
+}
+
+.rp-qnum {
+    font-weight: 800;
+    color: rgba(255, 200, 100, 0.7);
+}
+
+.rp-qtext {
+    color: rgba(255, 255, 255, 0.7);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rp-qans {
+    font-weight: 600;
+    color: rgba(80, 200, 120, 0.85);
+    font-size: 0.65rem;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

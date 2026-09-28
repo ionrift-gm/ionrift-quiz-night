@@ -1,0 +1,47 @@
+<div class="quiz-prizes-panel">
+    <p class="prizes-lede">Drop items from the sidebar or a compendium onto a placing. Mystery hides one piece, not the whole haul.</p>
+
+    {{#each tiers}}
+    <section class="prize-placing {{this.tier}}" data-tier="{{this.tier}}">
+        <header class="placing-head">
+            <span class="placing-label">{{this.tierLabel}}</span>
+        </header>
+
+        <div class="placing-fields">
+            <input type="text" data-prize-tier="{{this.tier}}" data-prize-field="label" value="{{this.label}}" placeholder="Prize name" />
+            <div class="prize-gold-field-compact">
+                <i class="fas fa-coins"></i>
+                <input type="number" data-prize-tier="{{this.tier}}" data-prize-field="gold" value="{{this.gold}}" min="0" step="5" placeholder="0" />
+                <label class="prize-mystery-toggle" title="Hide the gold amount until the reveal">
+                    <input type="checkbox" data-prize-tier="{{this.tier}}" data-prize-field="gold-mystery" {{#if this.goldMystery}}checked{{/if}} />
+                    Mystery
+                </label>
+            </div>
+        </div>
+
+        <div class="prize-drop-zone" data-tier="{{this.tier}}">
+            {{#if this.items.length}}
+            <ul class="prize-item-chips">
+                {{#each this.items}}
+                <li class="prize-item-chip {{#if this.mystery}}is-mystery{{/if}}">
+                    <img src="{{#if this.img}}{{this.img}}{{else}}icons/svg/item-bag.svg{{/if}}" alt="" />
+                    <span>{{#if this.name}}{{this.name}}{{else}}Item{{/if}}</span>
+                    <label class="prize-mystery-toggle">
+                        <input type="checkbox" data-prize-tier="{{../tier}}" data-prize-field="item-mystery" data-uuid="{{this.uuid}}" {{#if this.mystery}}checked{{/if}} />
+                        Mystery
+                    </label>
+                    <button type="button" class="chip-remove" data-action="remove-item" data-tier="{{../tier}}" data-uuid="{{this.uuid}}" title="Remove"><i class="fas fa-times"></i></button>
+                </li>
+                {{/each}}
+            </ul>
+            {{else}}
+            <p class="drop-hint">Drop items here</p>
+            {{/if}}
+        </div>
+
+        {{#if this.isConsolation}}
+        <p class="placing-note">Each item is minted once per player below 2nd.</p>
+        {{/if}}
+    </section>
+    {{/each}}
+</div>

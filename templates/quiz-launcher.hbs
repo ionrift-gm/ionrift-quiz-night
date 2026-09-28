@@ -1,0 +1,23 @@
+<div class="ionrift-quiz-launcher">
+    {{#if quizzes.length}}
+    <div class="quiz-list">
+        {{#each quizzes}}
+        <div class="quiz-list-item">
+            <div class="quiz-info">
+                <strong>{{this.name}}</strong>
+                <span class="quiz-meta">{{this.rounds}} rounds | {{this.questions}} questions</span>
+            </div>
+            <div class="quiz-actions">
+                <button type="button" data-action="edit-quiz" data-quiz-id="{{this.id}}" title="Edit"><i class="fas fa-pen"></i></button>
+                <button type="button" data-action="duplicate-quiz" data-quiz-id="{{this.id}}" title="Duplicate"><i class="fas fa-copy"></i></button>
+                <button type="button" data-action="start-quiz" data-quiz-id="{{this.id}}" title="Start"><i class="fas fa-play"></i></button>
+                <button type="button" data-action="delete-quiz" data-quiz-id="{{this.id}}" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <p>No quizzes yet. Create one to get started.</p>
+    {{/if}}
+    <button type="button" class="btn-primary" data-action="new-quiz"><i class="fas fa-plus"></i> New Quiz</button>
+</div>

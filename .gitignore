@@ -1,0 +1,18 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+*.lock
+
+# Agent handoff specs (ephemeral — see DEV_PROTOCOLS.md §30)
+.cursor/
+CURSOR_TASK_*
+CURSOR_SPEC_*
+CURSOR_PLAN_*
+
+# Internal engineering docs (DEV_PROTOCOLS �22)
+docs/
+*_STRATEGY.md
+*_PLAN.md
+*_SPEC.md
+

@@ -1,0 +1,212 @@
+<form class="quiz-editor-form">
+    {{#if dirty}}
+    <div class="dirty-banner"><i class="fas fa-exclamation-circle"></i> Unsaved changes</div>
+    {{/if}}
+
+    <section class="editor-compact-header">
+        <div class="header-row">
+            <input type="text" name="quiz-name" class="quiz-name-input" value="{{quiz.name}}" placeholder="Quiz name" />
+            <button type="button" class="btn-toggle-prizes" data-action="open-prizes">
+                <i class="fas fa-gift"></i> Prizes
+            </button>
+        </div>
+    </section>
+
+    {{#if rounds.length}}
+    <section class="editor-section rounds-section">
+        <div class="round-tabs">
+            {{#each rounds}}
+            <div class="round-tab {{#if this.selected}}active{{/if}}" data-action="select-round" data-index="{{this.index}}">
+                <i class="fas {{this.typeIcon}} round-tab-icon"></i>
+                <span class="round-tab-name">{{#if this.name}}{{this.name}}{{else}}Round {{math this.index "+" 1}}{{/if}}</span>
+                <span class="round-tab-count">{{this.questionCount}}q</span>
+                <div class="round-tab-reorder">
+                    {{#if this.canMoveUp}}
+                    <button type="button" class="round-tab-move" data-action="move-round-up" data-index="{{this.index}}" title="Move left"><i class="fas fa-chevron-left"></i></button>
+                    {{/if}}
+                    {{#if this.canMoveDown}}
+                    <button type="button" class="round-tab-move" data-action="move-round-down" data-index="{{this.index}}" title="Move right"><i class="fas fa-chevron-right"></i></button>
+                    {{/if}}
+                </div>
+                <button type="button" class="round-tab-delete" data-action="delete-round" data-index="{{this.index}}"><i class="fas fa-times"></i></button>
+            </div>
+            {{/each}}
+            <button type="button" class="round-tab round-tab-add" data-action="add-round"><i class="fas fa-plus"></i></button>
+        </div>
+    </section>
+    {{/if}}
+
+    {{#if round}}
+    <section class="editor-section round-config-strip">
+        <div class="round-config-row">
+            <input type="text" name="round-name" value="{{round.name}}" placeholder="Round name" class="round-name-compact" />
+            <select name="round-type" class="round-type-compact">
+                {{#each roundTypes}}
+                <option value="{{this.value}}" {{#if (eq this.value ../round.type)}}selected{{/if}}>{{this.label}}</option>
+                {{/each}}
+            </select>
+            <select name="round-tag" class="round-tag-compact">
+                {{#each tags}}
+                <option value="{{this}}" {{#if (eq this ../round.tag)}}selected{{/if}}>{{this}}</option>
+                {{/each}}
+            </select>
+            <div class="round-config-num" title="Points awarded per correct question in this round">
+                <label title="Points awarded per correct question in this round">Pts / Q</label>
+                <input type="number" name="round-points" value="{{round.pointsPerQuestion}}" min="1" class="round-pts-compact" title="Points awarded per correct question in this round" />
+            </div>
+        </div>
+    </section>
+
+    <section class="editor-workspace {{#unless showSidebar}}no-sidebar{{/unless}}">
+        {{#if showSidebar}}
+        <div class="question-index-strip">
+            <div class="q-index-header">
+                <span>Questions</span>
+                <button type="button" class="btn-add-compact" data-action="add-question" title="Add question" {{#if ../questionAtCap}}disabled{{/if}}><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="q-index-list">
+                {{#each round.questions}}
+                <div class="q-index-item {{#if this.isExpanded}}active{{/if}}" data-action="select-question" data-index="{{this.qIndex}}">
+                    <span class="q-index-dot {{#if this.hasContent}}filled{{/if}}"></span>
+                    <span class="q-index-num">{{this.qLabel}}</span>
+                    <span class="q-index-preview">{{#if this.text}}{{this.text}}{{else}}<em>empty</em>{{/if}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="question-editor-pane">
+            {{#each round.questions}}
+            {{#if this.isExpanded}}
+            <div class="question-card expanded" data-q-index="{{this.qIndex}}">
+                <div class="question-card-toolbar">
+                    <span class="q-number">{{this.qLabel}}</span>
+                    <div class="q-toolbar-actions">
+                        <button type="button" class="q-tool" data-action="duplicate-question" data-index="{{this.qIndex}}" title="Duplicate question"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="q-move" data-action="move-question-up" data-index="{{this.qIndex}}" title="Move up"><i class="fas fa-arrow-up"></i></button>
+                        <button type="button" class="q-move" data-action="move-question-down" data-index="{{this.qIndex}}" title="Move down"><i class="fas fa-arrow-down"></i></button>
+                        <button type="button" class="q-delete" data-action="delete-question" data-index="{{this.qIndex}}" title="Delete question"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="question-card-body">
+                    <div class="form-row">
+                        <label>Question</label>
+                        <textarea data-question-field="text" data-question-index="{{this.qIndex}}" rows="2" placeholder="What was the name of...?">{{this.text}}</textarea>
+                    </div>
+
+                    {{#if (eq ../round.roundType "text-answer")}}
+                    <div class="form-row">
+                        <label>Answer</label>
+                        <input type="text" data-question-field="answer" data-question-index="{{this.qIndex}}" value="{{this.answer}}" placeholder="Correct answer" />
+                    </div>
+                    <div class="form-row">
+                        <label>Also accept</label>
+                        <input type="text" data-question-field="accepted" data-question-index="{{this.qIndex}}" value="{{this.acceptedAnswersStr}}" placeholder="Comma-separated alternatives (case-insensitive)" />
+                    </div>
+                    {{/if}}
+
+                    {{#if (eq ../round.roundType "picture")}}
+                    <div class="form-row media-row">
+                        <label>Image</label>
+                        <input type="text" data-question-field="media" data-question-index="{{this.qIndex}}" value="{{this.media}}" placeholder="path/to/image.webp" />
+                        <button type="button" class="btn-secondary btn-compact" data-action="pick-media" data-question-index="{{this.qIndex}}" title="Browse"><i class="fas fa-folder-open"></i></button>
+                    </div>
+                    {{#if this.hasImagePreview}}
+                    <div class="editor-media-preview">
+                        <img src="{{this.media}}" alt="" />
+                    </div>
+                    {{/if}}
+                    <div class="form-row">
+                        <label>Answer</label>
+                        <input type="text" data-question-field="answer" data-question-index="{{this.qIndex}}" value="{{this.answer}}" placeholder="What is this?" />
+                    </div>
+                    {{/if}}
+
+                    {{#if (eq ../round.roundType "nearest-number")}}
+                    <div class="form-row">
+                        <label>Target number</label>
+                        <input type="number" data-question-field="number-answer" data-question-index="{{this.qIndex}}" value="{{this.answer}}" placeholder="42" />
+                    </div>
+                    {{/if}}
+
+                    {{#if (eq ../round.roundType "multiple-choice")}}
+                    <div class="mc-options">
+                        {{#if this.optionsList.length}}
+                        {{#each this.optionsList}}
+                        <div class="mc-option-row">
+                            <input type="radio" name="mc-correct-{{../this.qIndex}}" value="{{this.oIndex}}"
+                                data-question-field="correctIndex" data-question-index="{{../this.qIndex}}"
+                                {{#if this.isCorrect}}checked{{/if}} />
+                            <input type="text" data-option-index="{{this.oIndex}}" data-question-index="{{../this.qIndex}}" value="{{this.text}}" placeholder="Option {{this.oLabel}}" />
+                        </div>
+                        {{/each}}
+                        {{else if this.options.length}}
+                        {{#each this.options}}
+                        <div class="mc-option-row">
+                            <input type="radio" name="mc-correct-{{../this.qIndex}}" value="{{@index}}"
+                                data-question-field="correctIndex" data-question-index="{{../this.qIndex}}"
+                                {{#if (eq @index ../this.correctIndex)}}checked{{/if}} />
+                            <input type="text" data-option-index="{{@index}}" data-question-index="{{../this.qIndex}}" value="{{this}}" placeholder="Option {{math @index '+' 1}}" />
+                        </div>
+                        {{/each}}
+                        {{/if}}
+                    </div>
+                    {{/if}}
+
+                    {{#if (eq ../round.roundType "true-false")}}
+                    <div class="tf-toggle">
+                        <select data-question-field="tf-answer" data-question-index="{{this.qIndex}}">
+                            <option value="true" {{#if this.answer}}selected{{/if}}>True</option>
+                            <option value="false" {{#unless this.answer}}selected{{/unless}}>False</option>
+                        </select>
+                    </div>
+                    {{/if}}
+
+                    <div class="form-row">
+                        <label>Hint (optional)</label>
+                        <input type="text" data-question-field="hint" data-question-index="{{this.qIndex}}" value="{{this.hint}}" placeholder="A clue for the players..." />
+                    </div>
+                </div>
+            </div>
+            {{/if}}
+            {{/each}}
+
+            {{#unless round.questions.length}}
+            <div class="question-editor-empty">
+                <i class="fas fa-pen-fancy"></i>
+                <p>Add your first question to this round.</p>
+                <button type="button" class="btn-add" data-action="add-question"><i class="fas fa-plus"></i> Add Question</button>
+            </div>
+            {{/unless}}
+
+            {{#if showSidebar}}
+            {{#unless hasExpandedQuestion}}
+            <div class="question-editor-empty">
+                <p>Select a question from the list.</p>
+            </div>
+            {{/unless}}
+            {{/if}}
+        </div>
+    </section>
+    {{else}}
+    <section class="editor-section empty-state">
+        <p>Start with a round. Questions live inside it.</p>
+        <button type="button" class="btn-primary" data-action="add-round"><i class="fas fa-plus"></i> Add Round</button>
+    </section>
+    {{/if}}
+
+    <footer class="editor-footer-sticky">
+        <div class="footer-overflow">
+            <button type="button" class="btn-overflow" data-action="toggle-footer-menu" title="More options"><i class="fas fa-ellipsis-h"></i> Options</button>
+            {{#if footerMenuOpen}}
+            <div class="footer-overflow-menu">
+                <button type="button" data-action="import-quiz"><i class="fas fa-file-import"></i> Import</button>
+                <button type="button" data-action="export-quiz"><i class="fas fa-file-export"></i> Export</button>
+            </div>
+            {{/if}}
+        </div>
+        <button type="button" class="btn-save" data-action="save-quiz"><i class="fas fa-save"></i> Save Quiz</button>
+    </footer>
+</form>

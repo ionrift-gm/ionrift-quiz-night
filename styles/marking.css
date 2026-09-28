@@ -1,0 +1,805 @@
+/* Quiz Night: marking.css. GM and player marking surfaces. */
+.qm-marking-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+    flex-shrink: 0;
+}
+
+/* Hero card - current question being marked */
+.marking-hero {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+.marking-hero-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.marking-q-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.9);
+    text-transform: uppercase;
+}
+.marking-progress {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+.marking-q-text {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0.2rem 0 0.5rem;
+    font-weight: 500;
+}
+.marking-correct-answer {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(80, 200, 120, 0.1);
+    border: 1px solid rgba(80, 200, 120, 0.2);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+.correct-label {
+    font-size: 0.7rem;
+    color: rgba(80, 200, 120, 0.7);
+    flex-shrink: 0;
+}
+.correct-text {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: rgba(80, 200, 120, 1);
+}
+
+/* Player answer rows in the hero card */
+.marking-player-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 0.6rem;
+    max-height: 12rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding: 2px;
+}
+.marking-result-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    border: 1px solid transparent;
+    box-sizing: border-box;
+}
+.marking-result-row.correct {
+    background: rgba(80, 200, 120, 0.07);
+    color: rgba(80, 200, 120, 0.9);
+}
+.marking-result-row.incorrect {
+    color: rgba(255, 255, 255, 0.45);
+}
+.marking-result-row.adjudicated {
+    border-color: rgba(232, 67, 147, 0.5);
+    border-style: dashed;
+}
+.mpr-name {
+    font-weight: 600;
+    min-width: 70px;
+    flex-shrink: 0;
+}
+.mpr-answer {
+    flex: 1;
+    font-style: italic;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.mpr-points {
+    font-weight: 700;
+    min-width: 1.5rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Pens Down button highlight */
+.btn-lock {
+    border-color: rgba(255, 200, 100, 0.35) !important;
+    color: rgba(255, 200, 100, 0.9) !important;
+}
+.btn-lock:hover {
+    background: rgba(255, 200, 100, 0.12) !important;
+}
+.btn-lock.btn-primary {
+    background: rgba(255, 200, 100, 0.15) !important;
+}
+
+/* Marking start state */
+.marking-start {
+    text-align: center;
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Scrollable log of already-revealed questions */
+.marking-log {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.5rem;
+}
+.marking-log-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.25);
+    padding-bottom: 0.2rem;
+}
+
+.log-entry {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+}
+.log-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+}
+.log-q-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.6);
+    flex-shrink: 0;
+}
+.log-q-text {
+    flex: 1;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.log-correct-answer {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(80, 200, 120, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    flex-shrink: 0;
+}
+.log-player-answers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+
+/* Player answer chips in the log */
+.log-player-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    max-width: 160px;
+    cursor: default;
+}
+.log-player-chip.correct {
+    background: rgba(80, 200, 120, 0.1);
+    color: rgba(80, 200, 120, 0.85);
+}
+.log-player-chip.incorrect {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.35);
+}
+.log-chip-name {
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.log-chip-answer {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+    font-style: italic;
+}
+
+
+/* Pens Down locked state */
+.qp-locked {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+.lock-icon {
+    font-size: 2rem;
+    color: rgba(255, 200, 100, 0.6);
+    margin-bottom: 0.75rem;
+}
+.qp-locked h3 {
+    color: rgba(255, 200, 100, 0.9) !important;
+    margin: 0.25rem 0;
+}
+
+/* Answered state - updated messaging */
+.answered-msg {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0;
+}
+.answered-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0;
+    font-style: italic;
+}
+
+/* Marking section - player view */
+.qp-marking {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-height: 0;
+    max-height: 100%;
+}
+
+/* Hero card on player screen */
+.player-marking-hero {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+.pmh-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.pmh-q-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.8);
+    text-transform: uppercase;
+}
+.pmh-correct {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(80, 200, 120, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.pmh-q-text {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0.15rem 0 0.5rem;
+}
+.pmh-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 0.4rem;
+    max-height: 12rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+.pmh-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+}
+.pmh-answer-row.correct { color: rgba(80, 200, 120, 0.85); }
+.pmh-answer-row.incorrect { color: rgba(255, 255, 255, 0.4); }
+.pmh-answer-row.is-me {
+    background: rgba(232, 67, 147, 0.08);
+    border-left: 2px solid rgba(232, 67, 147, 0.5);
+    padding-left: 0.4rem;
+}
+.pmh-answer-row.is-me .pmh-player-name::after {
+    content: none !important;
+}
+.self-tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.95);
+    background: rgba(232, 67, 147, 0.2);
+    border: 1px solid rgba(232, 67, 147, 0.4);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    margin-left: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+}
+.pmh-player-name {
+    font-weight: 600;
+    min-width: 65px;
+    flex-shrink: 0;
+}
+.pmh-answer-text {
+    flex: 1;
+    font-style: italic;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.pmh-correct-icon { color: rgba(80, 200, 120, 0.8); }
+.pmh-wrong-icon   { color: rgba(255, 255, 255, 0.2); }
+
+.pmh-my-result {
+    text-align: center;
+    padding: 0.3rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+}
+.pmh-my-result.correct {
+    background: rgba(80, 200, 120, 0.1);
+    color: rgba(80, 200, 120, 0.9);
+}
+.pmh-my-result.incorrect {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Player marking log */
+.player-marking-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.4rem;
+}
+.pml-entry {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    padding: 0.3rem 0.4rem;
+}
+.pml-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.25rem;
+}
+.pml-q-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.55);
+    flex-shrink: 0;
+}
+.pml-q-text {
+    flex: 1;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pml-correct {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: rgba(80, 200, 120, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    flex-shrink: 0;
+}
+.pml-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+.pml-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.08rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.62rem;
+    max-width: 140px;
+    cursor: default;
+}
+.pml-chip.correct {
+    background: rgba(80, 200, 120, 0.08);
+    color: rgba(80, 200, 120, 0.8);
+}
+.pml-chip.incorrect {
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.3);
+}
+.pml-chip-name { font-weight: 600; flex-shrink: 0; }
+.pml-chip-answer {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+    font-style: italic;
+}
+.qp-waiting-mark {
+    text-align: center;
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+.qp-idle .waiting-msg {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+
+.bulk-adj-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+
+.marking-result-row.probable,
+.marking-result-row.appealed {
+    border-color: rgba(240, 168, 72, 0.55);
+    background: rgba(240, 168, 72, 0.08);
+}
+.marking-result-row.correct.probable,
+.marking-result-row.correct.appealed {
+    border-color: rgba(240, 168, 72, 0.55);
+    background: rgba(80, 200, 120, 0.07);
+}
+
+.appeal-badge,
+.fuzzy-badge {
+    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    opacity: 0.85;
+}
+
+.appeal-btn {
+    margin-top: 0.4rem;
+}
+
+.appeal-pending {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    color: rgba(240, 168, 72, 0.9);
+}
+
+.adj-btn.tiny {
+    padding: 0.05rem 0.25rem;
+    font-size: 0.65rem;
+}
+
+
+.answer-sheet {
+    width: 100%;
+    margin-top: 1rem;
+    text-align: left;
+    max-height: 14rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+.answer-sheet h4 {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6) !important;
+    border: none !important;
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.answer-sheet-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.answer-sheet-q {
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.7);
+    min-width: 2rem;
+    font-size: 0.75rem;
+}
+.answer-sheet-text {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.8);
+}
+.answer-sheet-text.no-answer {
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+}
+.answer-sheet-check {
+    color: rgba(80, 200, 120, 0.7);
+    font-weight: 600;
+}
+
+
+.pending-adjudication-banner {
+    background: rgba(28, 20, 12, 0.95);
+    border: 1px solid rgba(240, 168, 72, 0.5);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(240, 168, 72, 0.25);
+    border-radius: 6px;
+    padding: 0.55rem 0.7rem;
+    max-height: 10rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    margin-bottom: 0.6rem;
+}
+.pab-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: rgba(240, 168, 72, 0.95);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+}
+.pab-header i {
+    font-size: 0.75rem;
+}
+.pab-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+    background: rgba(0, 0, 0, 0.25);
+}
+.pab-item:last-child {
+    margin-bottom: 0;
+}
+.pab-question {
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: rgba(255, 130, 200, 0.8);
+    text-transform: uppercase;
+    flex-shrink: 0;
+    min-width: 1.8rem;
+}
+.pab-name {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
+    min-width: 65px;
+}
+.pab-answer {
+    flex: 1;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pab-type-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+}
+.pab-appeal .pab-type-label {
+    background: rgba(240, 168, 72, 0.2);
+    color: rgba(240, 168, 72, 0.95);
+}
+.pab-probable .pab-type-label {
+    background: rgba(255, 200, 100, 0.16);
+    color: rgba(255, 200, 100, 0.9);
+}
+.pab-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+.btn-pab-accept,
+.btn-pab-reject {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.55rem !important;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent !important;
+    background: none !important;
+    box-shadow: none !important;
+    min-height: 26px !important;
+    transition: all 0.15s ease;
+}
+.btn-pab-accept {
+    color: rgba(80, 200, 120, 0.95) !important;
+    border-color: rgba(80, 200, 120, 0.35) !important;
+    background: rgba(80, 200, 120, 0.08) !important;
+}
+.btn-pab-accept:hover {
+    background: rgba(80, 200, 120, 0.22) !important;
+}
+.btn-pab-reject {
+    color: rgba(239, 68, 68, 0.9) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+.btn-pab-reject:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+
+.marking-summary-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.4rem;
+    margin-bottom: 0.3rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+}
+.ms-correct {
+    font-weight: 600;
+    color: rgba(80, 200, 120, 0.9);
+}
+.ms-probable {
+    color: rgba(255, 200, 100, 0.8);
+}
+.ms-timeout {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+
+.marking-controls-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.marking-controls-row .btn-secondary {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-height: 38px;
+    padding: 0.4rem 0.75rem !important;
+}
+.marking-controls-row .btn-primary.btn-large {
+    flex: 1;
+    min-height: 38px;
+}
+
+
+.marking-overview-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.5rem;
+    max-height: 14rem;
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+.mo-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.75rem;
+    font-style: italic;
+    margin: 0;
+}
+.mo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.68rem;
+}
+.mo-table th,
+.mo-table td {
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+}
+.mo-table thead th {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.3rem;
+}
+.mo-q-col {
+    text-align: left !important;
+    width: 2.5rem;
+}
+.mo-pct-col {
+    width: 2rem;
+}
+.mo-q-label {
+    text-align: left !important;
+    font-weight: 700;
+    color: rgba(255, 130, 200, 0.7);
+    font-size: 0.62rem;
+}
+.mo-pct {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.mo-cell {
+    font-size: 0.72rem;
+}
+.mo-cell i {
+    font-size: 0.6rem;
+}
+.mo-correct {
+    color: rgba(80, 200, 120, 0.9);
+}
+.mo-incorrect {
+    color: rgba(239, 68, 68, 0.6);
+}
+.mo-timeout {
+    color: rgba(255, 255, 255, 0.2);
+}
+.mo-probable {
+    color: rgba(255, 200, 100, 0.8);
+    font-weight: 700;
+}
+.mo-pending {
+    color: rgba(255, 255, 255, 0.15);
+    font-style: italic;
+    text-align: left !important;
+}
+.mo-unrevealed td {
+    opacity: 0.4;
+}
+.mo-totals td {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    font-weight: 700;
+    font-size: 0.62rem;
+    padding-top: 0.3rem;
+}
+.mo-player-total {
+    color: rgba(255, 200, 100, 0.8);
+    font-variant-numeric: tabular-nums;
+}
+
+
+.player-marking-tally {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    background: rgba(232, 67, 147, 0.1);
+    border: 1px solid rgba(232, 67, 147, 0.25);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 130, 200, 0.9);
+    width: 100%;
+    box-sizing: border-box;
+}
+.player-marking-tally i {
+    color: rgba(255, 200, 100, 0.8);
+    font-size: 0.75rem;
+}

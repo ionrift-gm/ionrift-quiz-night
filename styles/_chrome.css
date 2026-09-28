@@ -1,0 +1,331 @@
+/* Quiz Night: _chrome.css. Shared tokens, scrollbars, buttons. Load first. */
+/* Domain styles only. Shell from ionrift-library via .ionrift-window + .glass-ui */
+
+/* Typography & Native Bleed Reset */
+.ionrift-quiz-editor .window-content,
+.ionrift-quiz-master .window-content,
+.ionrift-quiz-player .window-content,
+.ionrift-quiz-prizes .window-content,
+.ionrift-quiz-launcher-dialog .window-content {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ionrift-quiz-editor .window-content input,
+.ionrift-quiz-editor .window-content textarea,
+.ionrift-quiz-editor .window-content select,
+.ionrift-quiz-editor .window-content button,
+.ionrift-quiz-master .window-content input,
+.ionrift-quiz-master .window-content textarea,
+.ionrift-quiz-master .window-content select,
+.ionrift-quiz-master .window-content button,
+.ionrift-quiz-player .window-content input,
+.ionrift-quiz-player .window-content textarea,
+.ionrift-quiz-player .window-content select,
+.ionrift-quiz-player .window-content button,
+.ionrift-quiz-prizes .window-content input,
+.ionrift-quiz-prizes .window-content textarea,
+.ionrift-quiz-prizes .window-content select,
+.ionrift-quiz-prizes .window-content button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+}
+
+/* Protect FontAwesome on header controls and icon elements against font overrides */
+.ionrift-quiz-editor .header-control,
+.ionrift-quiz-master .header-control,
+.ionrift-quiz-player .header-control,
+.ionrift-quiz-prizes .header-control,
+.ionrift-quiz-launcher-dialog .header-control,
+.ionrift-quiz-editor .window-header button,
+.ionrift-quiz-master .window-header button,
+.ionrift-quiz-player .window-header button,
+.ionrift-quiz-prizes .window-header button,
+.ionrift-quiz-launcher-dialog .window-header button,
+.ionrift-quiz-editor [class*="fa-"],
+.ionrift-quiz-master [class*="fa-"],
+.ionrift-quiz-player [class*="fa-"],
+.ionrift-quiz-prizes [class*="fa-"],
+.ionrift-quiz-launcher-dialog [class*="fa-"] {
+    font-family: var(--font-awesome, "Font Awesome 6 Pro", "Font Awesome 6 Free", FontAwesome) !important;
+}
+
+.quiz-name-input {
+    font-family: 'Cinzel', serif !important;
+}
+
+/* Glass Form Controls */
+.ionrift-quiz-editor select,
+.ionrift-quiz-master select,
+.ionrift-quiz-player select,
+.ionrift-quiz-prizes select,
+.ionrift-quiz-launcher-dialog select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: rgba(14, 10, 26, 0.85) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.5rem center !important;
+    background-size: 10px 10px !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(140, 110, 240, 0.35) !important;
+    border-radius: 4px;
+    padding: 0.3rem 1.6rem 0.3rem 0.5rem !important;
+    cursor: pointer;
+}
+.ionrift-quiz-editor select option,
+.ionrift-quiz-master select option,
+.ionrift-quiz-player select option,
+.ionrift-quiz-prizes select option,
+.ionrift-quiz-launcher-dialog select option {
+    background: #0f0a1c !important;
+    color: #e2e8f0 !important;
+}
+
+.ionrift-quiz-editor,
+.ionrift-quiz-editor *,
+.ionrift-quiz-master,
+.ionrift-quiz-master *,
+.ionrift-quiz-player,
+.ionrift-quiz-player *,
+.ionrift-quiz-prizes,
+.ionrift-quiz-prizes *,
+.ionrift-quiz-launcher-dialog,
+.ionrift-quiz-launcher-dialog * {
+    scrollbar-color: #c2185b rgba(0, 0, 0, 0.4) !important;
+    scrollbar-width: thin !important;
+}
+
+.ionrift-quiz-editor ::-webkit-scrollbar,
+.ionrift-quiz-editor *::-webkit-scrollbar,
+.ionrift-quiz-master ::-webkit-scrollbar,
+.ionrift-quiz-master *::-webkit-scrollbar,
+.ionrift-quiz-player ::-webkit-scrollbar,
+.ionrift-quiz-player *::-webkit-scrollbar,
+.ionrift-quiz-prizes ::-webkit-scrollbar,
+.ionrift-quiz-prizes *::-webkit-scrollbar,
+.ionrift-quiz-launcher-dialog ::-webkit-scrollbar,
+.ionrift-quiz-launcher-dialog *::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.ionrift-quiz-editor ::-webkit-scrollbar-track,
+.ionrift-quiz-editor *::-webkit-scrollbar-track,
+.ionrift-quiz-master ::-webkit-scrollbar-track,
+.ionrift-quiz-master *::-webkit-scrollbar-track,
+.ionrift-quiz-player ::-webkit-scrollbar-track,
+.ionrift-quiz-player *::-webkit-scrollbar-track,
+.ionrift-quiz-prizes ::-webkit-scrollbar-track,
+.ionrift-quiz-prizes *::-webkit-scrollbar-track,
+.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-track,
+.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 4px;
+}
+
+.ionrift-quiz-editor ::-webkit-scrollbar-thumb,
+.ionrift-quiz-editor *::-webkit-scrollbar-thumb,
+.ionrift-quiz-master ::-webkit-scrollbar-thumb,
+.ionrift-quiz-master *::-webkit-scrollbar-thumb,
+.ionrift-quiz-player ::-webkit-scrollbar-thumb,
+.ionrift-quiz-player *::-webkit-scrollbar-thumb,
+.ionrift-quiz-prizes ::-webkit-scrollbar-thumb,
+.ionrift-quiz-prizes *::-webkit-scrollbar-thumb,
+.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-thumb,
+.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-thumb {
+    background: #c2185b !important;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ionrift-quiz-editor ::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-editor *::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-master ::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-master *::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-player ::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-player *::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-prizes ::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-prizes *::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-thumb:hover,
+.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-thumb:hover {
+    background: #E84393 !important;
+}
+
+
+/* Tag chips (campaign/rules/general) */
+.tag-chip {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: rgba(232, 67, 147, 0.15);
+    color: rgba(255, 130, 200, 0.9);
+    border: 1px solid rgba(232, 67, 147, 0.3);
+}
+
+/* Timer bar */
+.timer-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.timer-bar-fill {
+    height: 100%;
+    background: var(--ionrift-success, #2ecc71);
+    border-radius: 5px;
+    transition: width 1s linear, background 0.5s ease;
+}
+
+@keyframes timer-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+.timer-bar-fill.low {
+    animation: timer-pulse 1s ease infinite;
+}
+
+.timer-label {
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Round intro card */
+.round-intro-card {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.round-intro-card h3,
+.round-intro-card h4 {
+    border: none !important;
+    margin: 0.25rem 0;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.round-counter {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 130, 200, 0.7);
+    font-weight: 600;
+}
+
+.round-meta {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Buttons */
+.btn-primary {
+    background: rgba(232, 67, 147, 0.25) !important;
+    border: 1px solid rgba(232, 67, 147, 0.5) !important;
+    color: rgba(255, 130, 200, 0.95) !important;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.btn-primary:hover {
+    background: rgba(232, 67, 147, 0.4) !important;
+    box-shadow: 0 0 12px rgba(232, 67, 147, 0.3);
+}
+
+.btn-large {
+    padding: 0.6rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: rgba(239, 68, 68, 0.9) !important;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+}
+
+.btn-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: rgba(80, 200, 120, 0.12) !important;
+    border: 1px solid rgba(80, 200, 120, 0.35) !important;
+    color: rgba(80, 200, 120, 0.95) !important;
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+.btn-add i {
+    font-size: 0.75rem !important;
+    color: inherit !important;
+}
+.btn-add:hover {
+    background: rgba(80, 200, 120, 0.25) !important;
+    border-color: rgba(80, 200, 120, 0.5) !important;
+}
+
+/* Suppress ApplicationV2 window content label bleeding through */
+.ionrift-quiz-master .window-content > .window-content-label,
+.ionrift-quiz-player .window-content > .window-content-label,
+.ionrift-quiz-editor .window-content > .window-content-label,
+.ionrift-quiz-prizes .window-content > .window-content-label,
+.ionrift-quiz-launcher-dialog .window-content > .window-content-label {
+    display: none !important;
+}
