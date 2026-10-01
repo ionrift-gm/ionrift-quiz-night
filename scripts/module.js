@@ -27,37 +27,54 @@ Hooks.on("getSceneControlButtons", (controls) => {
     } catch {
         return;
     }
+
+    if (game.ionrift?.hud?.registerSceneControl) {
+        if (game.user.isGM) {
+            game.ionrift.hud.registerSceneControl(controls, {
+                group: "tokens",
+                name: "quiz-night",
+                title: "Quiz Night",
+                icon: "fas fa-question-circle",
+                order: 13,
+                gmOnly: true,
+                onClick: () => openQuizLauncher()
+            });
+        } else {
+            game.ionrift.hud.registerSceneControl(controls, {
+                group: "tokens",
+                name: "quiz-night-player",
+                title: "Quiz Night",
+                icon: "fas fa-question-circle",
+                order: 13,
+                gmOnly: false,
+                onClick: () => openOrFocusPlayerApp()
+            });
+        }
+        return;
+    }
+
     const tokenGroup = Array.isArray(controls)
-        ? controls.find(c => c.name === "token")
-        : controls.tokens;
+        ? controls.find(c => c.name === "token" || c.name === "tokens")
+        : (controls.tokens || controls.token);
     if (!tokenGroup) return;
 
-    if (game.user.isGM) {
-        const toolDef = {
-            name: "quiz-night",
-            title: "Quiz Night",
-            icon: "fas fa-question-circle",
-            button: true,
-            onClick: () => openQuizLauncher()
-        };
-        if (Array.isArray(tokenGroup.tools)) {
-            tokenGroup.tools.push(toolDef);
-        } else {
-            tokenGroup.tools[toolDef.name] = toolDef;
-        }
+    const isGM = game.user.isGM;
+    const toolDef = {
+        name: isGM ? "quiz-night" : "quiz-night-player",
+        title: "Quiz Night",
+        icon: "fas fa-question-circle",
+        button: true,
+        order: 13
+    };
+
+    const handler = () => (isGM ? openQuizLauncher() : openOrFocusPlayerApp());
+    if (Array.isArray(tokenGroup.tools)) {
+        toolDef.onClick = handler;
+        tokenGroup.tools.push(toolDef);
     } else {
-        const toolDef = {
-            name: "quiz-night-player",
-            title: "Quiz Night",
-            icon: "fas fa-question-circle",
-            button: true,
-            onClick: () => openOrFocusPlayerApp()
-        };
-        if (Array.isArray(tokenGroup.tools)) {
-            tokenGroup.tools.push(toolDef);
-        } else {
-            tokenGroup.tools[toolDef.name] = toolDef;
-        }
+        toolDef.onChange = handler;
+        if (!tokenGroup.tools) tokenGroup.tools = {};
+        tokenGroup.tools[toolDef.name] = toolDef;
     }
 });
 
