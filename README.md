@@ -16,7 +16,7 @@ Write questions about your campaign, run live trivia for your players, and hand 
 
 > Documentation, setup guides, and troubleshooting: **[Ionrift Wiki](https://github.com/ionrift-gm/ionrift-library/wiki)**
 
-Write questions about the campaign, run them at the table, and keep standings fogged until the end. Players answer on their own screens. The GM marks and hands out gold or items.
+Write questions about the campaign, run them at the table, and keep standings hidden until the end. Players answer on their own screens. The GM marks and hands out gold or items.
 
 ## How it works
 
@@ -29,7 +29,7 @@ Write questions about the campaign, run them at the table, and keep standings fo
 
 - Text, multiple choice, true/false, picture, and nearest-number rounds.
 - Answers update on the GM panel as they come in. Players can change an answer until the question is locked.
-- Fogged standings. Teaser ranks between rounds, full table at the end.
+- Hidden standings. Teaser ranks between rounds, full table at the end.
 - Prize window with drag-and-drop items. Everyone below 2nd gets a copy of each Everyone item.
 - JSON import and export.
 - Works with any game system. Gold delivery uses the active system's currency when it can.

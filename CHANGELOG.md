@@ -1,16 +1,16 @@
 # Changelog
 
-## [1.0.0] - 2026-09-28
+## [1.0.0] - 2026-10-03
 
-General availability release. Run live pub quizzes inside Foundry VTT with player answer sheets, fog-of-war standings, and mystery prize delivery.
+General availability release. Run live pub quizzes inside Foundry VTT with player answer sheets, hidden standings, and mystery prize delivery.
 
 ### Added
 - Nearest-number round type for numeric trivia and tiebreakers.
 - Live round overview matrix on the Quizmaster panel.
-- Centralised socket transport through Ionrift Library.
+- Module icon and toolbar launcher.
 
 ### Changed
-- Answers remain editable by players until question lock.
+- Player answers remain editable until question lock.
 - Standings reveal from the bottom up during the final ceremony.
 
 ## [0.1.0-ea.2] - 2026-09-20
@@ -25,12 +25,12 @@ General availability release. Run live pub quizzes inside Foundry VTT with playe
 
 ## [0.1.0-ea.1] - 2026-09-07
 
-First early access. Build a quiz in Foundry, run it live, keep standings fogged until the end, and hand out gold and items.
+First early access. Build a quiz in Foundry, run it live, keep standings hidden until the end, and hand out gold and items.
 
 ### Added
 - In-app editor for rounds and questions. Text, multiple choice, true/false, and picture rounds.
 - Quizmaster panel and player answer apps over sockets.
-- Fog of War standings. Teaser ranks between rounds. Bottom-up final reveal.
+- Hidden standings. Teaser ranks between rounds. Bottom-up final reveal.
 - Prize window for 1st, 2nd, and Everyone. Drop items from the sidebar or a compendium. A placing can hold more than one item. Mystery can hide gold or a single item.
 - Everyone items mint a copy for each player below 2nd.
 - JSON import and export.
