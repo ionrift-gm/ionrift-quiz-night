@@ -202,7 +202,8 @@ export function openQuizLauncher() {
 export function openOrFocusPlayerApp() {
     let app = getActivePlayerApp();
     if (app) {
-        app.render({ force: true });
+        if (app._docked) app.resumeFromDock();
+        else app.render({ force: true });
         SocketHandler.requestState();
         return app;
     }
