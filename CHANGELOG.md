@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.1] - 2026-10-03
+
+### Changed
+- Prizes are handed out as each placing is revealed, not when the quiz ends.
+- Closing the quiz window during a live quiz docks it instead of ending the quiz for everyone. Only the quizmaster can end a quiz early.
+- Players who closed their window are brought back for the prize reveal.
+
+### Fixed
+- Item prizes now reach the winner's character.
+- The quiz button reopens a docked player window.
+- Refreshing during the prize reveal picks up where it left off, without handing out prizes twice.
+
 ## [1.0.0] - 2026-10-03
 
 General availability release. Run live pub quizzes inside Foundry VTT with player answer sheets, hidden standings, and mystery prize delivery.
