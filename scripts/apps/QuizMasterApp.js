@@ -5,6 +5,7 @@ import { ScoringEngine } from "../services/ScoringEngine.js";
 import { TimerEngine } from "../services/TimerEngine.js";
 import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { PrizeDelivery } from "../services/PrizeDelivery.js";
+import { PrizeCeremony } from "../services/PrizeCeremony.js";
 import { SessionPersistence } from "../services/SessionPersistence.js";
 import { planWindowClose, isQuizFormallyStarted } from "../services/SessionWindowPolicy.js";
 import { showQuizDock, hideQuizDock } from "../ui/QuizDock.js";
@@ -74,11 +75,31 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _peekedQuestionIndex = null;
     _peekedRoundIndex = null;
     _prizeDisplay = {};
-    _ceremonyCards = [];
-    _ceremonyShown = 0;
+    _ceremony = new PrizeCeremony();
+    _revealing = false;
     _lockWarningActive = false;
     _lockWarningTimer = null;
     _docked = false;
+
+    /** Views kept for callers (and screenshot tooling) that predate PrizeCeremony. */
+    get _ceremonyCards() {
+        return this._ceremony.cards;
+    }
+
+    set _ceremonyCards(cards) {
+        this._ceremony = new PrizeCeremony({
+            ...this._ceremony.serialize(),
+            cards: Array.isArray(cards) ? cards : []
+        });
+    }
+
+    get _ceremonyShown() {
+        return this._ceremony.shown;
+    }
+
+    set _ceremonyShown(n) {
+        this._ceremony = new PrizeCeremony({ ...this._ceremony.serialize(), shown: n });
+    }
 
     constructor(quizData, options = {}) {
         super(options);
@@ -119,8 +140,10 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (snapshot.state === "quiz-end" && snapshot.finalReveal) {
             app._finalReveal = snapshot.finalReveal;
-            app._ceremonyCards = snapshot.ceremonyCards || [];
-            app._ceremonyShown = snapshot.ceremonyShown || 0;
+            app._ceremony = PrizeCeremony.fromSnapshot(snapshot);
+            if (!app._ceremony.hasMore && !app._ceremony.summaryPosted) {
+                app._finishCeremony().catch(err => Logger.warn("Ceremony finish failed:", err?.message));
+            }
         }
 
         Logger.log("Recovered quiz session from persisted state.");
@@ -272,10 +295,11 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             hasPendingAdjudications: pendingAdjudications.length > 0,
             markingSummary,
             prizeTiers: PrizeDelivery.toPrizeTierList(this._prizeDisplay),
-            ceremonyCards: this._ceremonyCards.slice(0, this._ceremonyShown),
-            ceremonyHasMore: this._ceremonyShown < this._ceremonyCards.length,
-            ceremonyTotal: this._ceremonyCards.length,
-            ceremonyShown: this._ceremonyShown,
+            ceremonyCards: this._ceremony.visibleCards,
+            ceremonyHasMore: this._ceremony.hasMore,
+            ceremonyTotal: this._ceremony.total,
+            ceremonyShown: this._ceremony.shown,
+            ceremonyBusy: this._revealing,
             canAbandon: isQuizFormallyStarted(engine.state)
         };
     }
@@ -308,7 +332,7 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (isLastRound) {
             const confirmed = await Dialog.confirm({
                 title: "Final Round Complete",
-                content: "<p>All rounds are finished. Proceed to final results and prize delivery?</p>"
+                content: "<p>All rounds are finished. Proceed to final results and the prize reveal?</p>"
             });
             if (!confirmed) return;
             await QuizMasterApp.#onEndQuiz.call(this, event, target);
@@ -486,7 +510,7 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const force = options?.force || options?._forceClose || target?.dataset?.force === "true";
         const confirmed = force || await Dialog.confirm({
             title: "End Quiz?",
-            content: "<p>This will announce final results and deliver prizes to all players. This cannot be undone.</p>"
+            content: "<p>This will announce final results. Prizes are handed out as you reveal each placing. This cannot be undone.</p>"
         });
         if (!confirmed) return;
 
@@ -496,14 +520,21 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const scores = ScoringEngine.calculateScores(this._engine.playerHistory);
         const reveal = ScoringEngine.generateFinalReveal(scores, this._quizData.prizes);
         this._finalReveal = reveal;
-        this._ceremonyCards = await PrizeDelivery.enrichRevealCards(reveal);
-        this._ceremonyShown = 0;
+        this._ceremony = new PrizeCeremony({
+            reveal,
+            cards: await PrizeDelivery.enrichRevealCards(reveal)
+        });
 
-        this._persistSession();
+        if (!this._ceremony.hasMore) {
+            this._ceremony.summaryPosted = true;
+        }
+        await this._persistSession();
 
         SocketHandler.broadcastQuizEnd(reveal, {
-            ceremonyCards: this._ceremonyCards,
-            ceremonyShown: 0
+            ceremonyCards: [],
+            ceremonyShown: 0,
+            ceremonyTotal: this._ceremony.total,
+            ceremonyLive: !this._ceremony.isComplete
         });
 
         Hooks.callAll("ionrift.quizNight.quizEnd", {
@@ -511,25 +542,47 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             scores
         });
 
-        const topDown = [...reveal].reverse();
-        const outcomes = await PrizeDelivery.deliverAll(topDown);
-        const prizeHtml = PrizeDelivery.formatChatSummary(outcomes);
-        if (prizeHtml) this._chatAnnounce(prizeHtml);
-
-        SessionPersistence.clear();
+        if (this._ceremony.isComplete) await SessionPersistence.clear();
         this.render();
     }
 
-    static #onRevealNextPrize() {
-        if (this._ceremonyShown >= this._ceremonyCards.length) return;
-        this._ceremonyShown += 1;
-        const cards = this._ceremonyCards.slice(0, this._ceremonyShown);
-        SocketHandler.broadcastPrizeReveal({
-            cards,
-            shown: this._ceremonyShown,
-            total: this._ceremonyCards.length
-        });
-        this.render();
+    static async #onRevealNextPrize() {
+        if (this._revealing) return;
+        const step = this._ceremony.revealNext();
+        if (!step) return;
+        this._revealing = true;
+        try {
+            // The claim must land before any character is touched, so a refresh
+            // mid-delivery can never hand the same prize out twice.
+            await this._persistSession();
+
+            SocketHandler.broadcastPrizeReveal({
+                cards: this._ceremony.visibleCards,
+                shown: this._ceremony.shown,
+                total: this._ceremony.total
+            });
+            this.render();
+
+            if (step.entry?.prize) {
+                const outcome = await PrizeDelivery.deliver(step.entry);
+                this._ceremony.recordOutcome(step.index, outcome);
+                await this._persistSession();
+            }
+
+            if (!this._ceremony.hasMore) await this._finishCeremony();
+        } finally {
+            this._revealing = false;
+            this.render();
+        }
+    }
+
+    /** Post the delivery summary once every placing is out, then close the books. */
+    async _finishCeremony() {
+        if (this._ceremony.summaryPosted) return;
+        const prizeHtml = PrizeDelivery.formatChatSummary(this._ceremony.summaryOutcomes());
+        if (prizeHtml) this._chatAnnounce(prizeHtml);
+        this._ceremony.summaryPosted = true;
+        await SessionPersistence.clear();
     }
 
     static #onAdjudicate(event, target) {
@@ -885,8 +938,10 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._engine.state === "quiz-end" && this._finalReveal) {
             payload.active = false;
             payload.finalReveal = this._finalReveal;
-            payload.ceremonyCards = this._ceremonyCards;
-            payload.ceremonyShown = this._ceremonyShown;
+            payload.ceremonyCards = this._ceremony.visibleCards;
+            payload.ceremonyShown = this._ceremony.shown;
+            payload.ceremonyTotal = this._ceremony.total;
+            payload.ceremonyLive = !this._ceremony.isComplete;
         }
         SocketHandler.broadcastStateSync(payload);
     }
@@ -900,10 +955,11 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _persistSession() {
         const extra = {};
-        if (this._finalReveal) extra.finalReveal = this._finalReveal;
-        extra.ceremonyCards = this._ceremonyCards;
-        extra.ceremonyShown = this._ceremonyShown;
-        SessionPersistence.save(this._engine, this._quizData, {
+        if (this._finalReveal) {
+            extra.finalReveal = this._finalReveal;
+            extra.ceremony = this._ceremony.serialize();
+        }
+        return SessionPersistence.save(this._engine, this._quizData, {
             remaining: this._timer.remaining,
             total: this._timer.total
         }, extra);
@@ -979,13 +1035,14 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const plan = planWindowClose({
             role: "gm",
             state: this._engine?.state,
-            intent
+            intent,
+            ceremonyPending: !!this._finalReveal && !this._ceremony.isComplete
         });
 
         if (plan.action === "minimize") {
             this._docked = true;
             showQuizDock({
-                label: "Quiz in progress",
+                label: this._engine?.state === "quiz-end" ? "Prize reveal in progress" : "Quiz in progress",
                 onResume: () => this.resumeFromDock()
             });
             return super.close(options);

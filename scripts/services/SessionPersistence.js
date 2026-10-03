@@ -16,10 +16,9 @@ export class SessionPersistence {
     }
 
     static save(engine, quizData, timerState = {}, extra = {}) {
-        if (!game.user.isGM) return;
+        if (!game.user.isGM) return Promise.resolve();
         if (!engine || engine.state === "idle") {
-            this.clear();
-            return;
+            return this.clear();
         }
         const snapshot = engine.serialize();
         snapshot.quizData = quizData;
@@ -27,9 +26,12 @@ export class SessionPersistence {
         snapshot.savedAt = Date.now();
         Object.assign(snapshot, extra);
         try {
-            game.settings.set(MODULE_ID, SETTING_KEY, snapshot);
+            return Promise.resolve(game.settings.set(MODULE_ID, SETTING_KEY, snapshot)).catch(err => {
+                Logger.warn("Session save failed:", err?.message);
+            });
         } catch (err) {
             Logger.warn("Session save failed:", err.message);
+            return Promise.resolve();
         }
     }
 

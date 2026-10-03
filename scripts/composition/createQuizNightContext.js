@@ -2,6 +2,7 @@ import { Logger } from "../lib/Logger.js";
 import { MODULE_ID } from "../data/constants.js";
 import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { SessionPersistence } from "../services/SessionPersistence.js";
+import { planPlayerSync } from "../services/SessionWindowPolicy.js";
 import { QuizEditorApp } from "../apps/QuizEditorApp.js";
 import { QuizLauncherApp } from "../apps/QuizLauncherApp.js";
 import { QuizMasterApp } from "../apps/QuizMasterApp.js";
@@ -25,12 +26,12 @@ export function registerSettings() {
     SessionPersistence.register();
 
     game.settings.register(MODULE_ID, "showSceneButton", {
-        name: "Token toolbar button",
-        hint: "Show the Quiz Night button on the token controls.",
-        scope: "client",
-        config: false,
+        name: "Left toolbar button",
+        hint: "Show Quiz Night on the left token controls. Off leaves that spot free.",
+        scope: "world",
+        config: true,
         type: Boolean,
-        default: true,
+        default: false,
         onChange: () => {
             ui.controls?.render?.({ force: true });
             ui.controls?.render?.(true);
@@ -225,9 +226,9 @@ export function initSocketsForPlayer() {
 
     if (!game.user.isGM) {
         SocketHandler.register((data) => {
-            if (data.type === "state:sync" && data.active && !getActivePlayerApp()) {
-                openOrFocusPlayerApp();
-            }
+            if (data.type !== "state:sync" && data.type !== "quiz:end") return;
+            if (getActivePlayerApp()) return;
+            if (planPlayerSync(data).openIfMissing) openOrFocusPlayerApp();
         });
         setTimeout(() => SocketHandler.requestState(), 2000);
     }

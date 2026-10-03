@@ -4,22 +4,25 @@
  * can end it for every client, by abandoning or by running to the result.
  */
 
+import { PrizeCeremony } from "./PrizeCeremony.js";
+
 export function isQuizFormallyStarted(state) {
     return !!state && state !== "idle" && state !== "quiz-end";
 }
 
 /**
- * A persisted snapshot should reopen after a refresh only while the sitting is live.
+ * A persisted snapshot should reopen after a refresh while the sitting is live,
+ * or while the prize ceremony still has placings to reveal.
  * @param {object|null} snapshot
  */
 export function shouldRecoverSession(snapshot) {
-    return isQuizFormallyStarted(snapshot?.state);
+    return isQuizFormallyStarted(snapshot?.state) || PrizeCeremony.isPendingInSnapshot(snapshot);
 }
 
 /**
- * @param {{ role: "gm"|"player", state: string, intent?: "window"|"abandon" }} input
+ * @param {{ role: "gm"|"player", state: string, intent?: "window"|"abandon", ceremonyPending?: boolean }} input
  */
-export function planWindowClose({ role, state, intent = "window" }) {
+export function planWindowClose({ role, state, intent = "window", ceremonyPending = false }) {
     const started = isQuizFormallyStarted(state);
 
     if (intent === "abandon") {
@@ -34,7 +37,9 @@ export function planWindowClose({ role, state, intent = "window" }) {
         };
     }
 
-    if (started) {
+    // Prizes are handed out as placings are revealed; closing mid-reveal must not drop them.
+    const revealUnfinished = role === "gm" && state === "quiz-end" && ceremonyPending;
+    if (started || revealUnfinished) {
         return { action: "minimize", broadcast: null, clearSession: false, showDock: true };
     }
 
@@ -78,7 +83,7 @@ export function planPlayerSync(data = {}) {
             reopen: true,
             notifyEnded: false,
             sessionLive: false,
-            openIfMissing: false
+            openIfMissing: data.type === "quiz:end" || !!data.ceremonyLive
         };
     }
 

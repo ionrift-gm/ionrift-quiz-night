@@ -639,7 +639,7 @@
         <p>Ready to reveal prizes, last place first.</p>
         {{/if}}
         {{#if ceremonyHasMore}}
-        <button data-action="reveal-next-prize" class="btn-primary btn-large">
+        <button data-action="reveal-next-prize" class="btn-primary btn-large" {{#if ceremonyBusy}}disabled{{/if}}>
             <i class="fas fa-gift"></i> Reveal Next Prize
         </button>
         {{else}}
