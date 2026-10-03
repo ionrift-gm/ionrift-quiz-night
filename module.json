@@ -17,6 +17,7 @@
     "socket": true,
     "styles": [
         "styles/_chrome.css",
+        "styles/dock.css",
         "styles/editor.css",
         "styles/launcher.css",
         "styles/master.css",

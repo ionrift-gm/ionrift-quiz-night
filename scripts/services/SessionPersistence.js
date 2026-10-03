@@ -1,5 +1,6 @@
 import { Logger } from "../lib/Logger.js";
 import { MODULE_ID } from "../data/constants.js";
+import { shouldRecoverSession } from "./SessionWindowPolicy.js";
 
 const SETTING_KEY = "activeSession";
 
@@ -50,7 +51,6 @@ export class SessionPersistence {
     }
 
     static hasActiveSession() {
-        const data = this.load();
-        return data !== null && data?.state !== "idle" && data?.state !== "quiz-end";
+        return shouldRecoverSession(this.load());
     }
 }

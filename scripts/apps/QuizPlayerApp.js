@@ -4,6 +4,8 @@ import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { PrizeDelivery } from "../services/PrizeDelivery.js";
 import { TimerEngine } from "../services/TimerEngine.js";
 import { clearActivePlayerApp } from "../composition/sessionState.js";
+import { planWindowClose, planPlayerSync } from "../services/SessionWindowPolicy.js";
+import { showQuizDock, hideQuizDock } from "../ui/QuizDock.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -60,10 +62,30 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _navigatedQuestionIndex = null;
     /** Pending MC/TF selection before confirm */
     _pendingChoice = null;
+    /** True after the quizmaster has started this sitting, until it ends. */
+    _sessionLive = false;
+    _docked = false;
 
     constructor(options = {}) {
         super(options);
         this._unregisterSocket = SocketHandler.register((data) => this._handleSocket(data));
+    }
+
+    render(options) {
+        if (this._docked) return this;
+        return super.render(options);
+    }
+
+    resumeFromDock() {
+        this._docked = false;
+        hideQuizDock();
+        return this.render({ force: true });
+    }
+
+    _closeState() {
+        if (!this._sessionLive) return "idle";
+        if (this._state === "quiz-end") return "quiz-end";
+        return "running";
     }
 
     get title() {
@@ -273,6 +295,7 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _handleSocket(data) {
         switch (data.type) {
             case "quiz:start":
+                this._sessionLive = true;
                 this._quizName = data.quizName;
                 this._prizes = data.prizes || {};
                 this._state = "waiting";
@@ -385,6 +408,9 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 break;
 
             case "quiz:end":
+                this._sessionLive = false;
+                this._docked = false;
+                hideQuizDock();
                 this._finalReveal = data.reveal;
                 this._ceremonyCards = [];
                 this._state = "quiz-end";
@@ -392,6 +418,9 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 break;
 
             case "prize:reveal":
+                this._sessionLive = false;
+                this._docked = false;
+                hideQuizDock();
                 this._ceremonyCards = data.cards || [];
                 this._state = "quiz-end";
                 this.render();
@@ -404,7 +433,11 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _applySync(data) {
-        if ((!data.active && data.state !== "quiz-end") || data.aborted) {
+        const remote = planPlayerSync(data);
+        if (remote.action === "end-local") {
+            this._sessionLive = false;
+            this._docked = false;
+            hideQuizDock();
             this._state = "idle";
             this._quizName = "";
             this._question = null;
@@ -417,11 +450,18 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             this._navigatedQuestionIndex = null;
             this._pendingChoice = null;
             this._resetMarkingState();
-            if (data.aborted) {
+            if (remote.notifyEnded) {
                 ui.notifications.info("The quiz has been ended by the GM.");
             }
-            this.render({ force: true });
-            return;
+            return this.close();
+        }
+
+        if (remote.action === "show-conclusion") {
+            this._sessionLive = false;
+            this._docked = false;
+            hideQuizDock();
+        } else if (remote.sessionLive) {
+            this._sessionLive = true;
         }
 
         this._quizName = data.quizName || this._quizName;
@@ -545,6 +585,24 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async close(options = {}) {
+        const plan = planWindowClose({
+            role: "player",
+            state: this._closeState(),
+            intent: options.abandon ? "abandon" : "window"
+        });
+
+        if (plan.action === "minimize") {
+            this._docked = true;
+            showQuizDock({
+                label: "Quiz in progress",
+                onResume: () => this.resumeFromDock()
+            });
+            return super.close(options);
+        }
+
+        hideQuizDock();
+        this._docked = false;
+        this._sessionLive = false;
         if (this._unregisterSocket) {
             this._unregisterSocket();
             this._unregisterSocket = null;

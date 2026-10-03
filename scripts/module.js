@@ -6,9 +6,9 @@ import {
     registerAPI,
     registerSettingsLayout,
     initSocketsForPlayer,
-    openOrFocusPlayerApp,
     openQuizLauncher
 } from "./composition/createQuizNightContext.js";
+import { getActivePlayerApp } from "./composition/sessionState.js";
 import { SessionPersistence } from "./services/SessionPersistence.js";
 import { PrizeDelivery } from "./services/PrizeDelivery.js";
 
@@ -22,6 +22,7 @@ Hooks.once("init", async () => {
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
+    if (!game.user?.isGM) return;
     try {
         if (game.settings.get(MODULE_ID, "showSceneButton") === false) return;
     } catch {
@@ -29,27 +30,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
     }
 
     if (game.ionrift?.hud?.registerSceneControl) {
-        if (game.user.isGM) {
-            game.ionrift.hud.registerSceneControl(controls, {
-                group: "tokens",
-                name: "quiz-night",
-                title: "Quiz Night",
-                icon: "fas fa-question-circle",
-                order: 13,
-                gmOnly: true,
-                onClick: () => openQuizLauncher()
-            });
-        } else {
-            game.ionrift.hud.registerSceneControl(controls, {
-                group: "tokens",
-                name: "quiz-night-player",
-                title: "Quiz Night",
-                icon: "fas fa-question-circle",
-                order: 13,
-                gmOnly: false,
-                onClick: () => openOrFocusPlayerApp()
-            });
-        }
+        game.ionrift.hud.registerSceneControl(controls, {
+            group: "tokens",
+            name: "quiz-night",
+            title: "Quiz Night",
+            icon: "fas fa-question-circle",
+            order: 13,
+            gmOnly: true,
+            onClick: () => openQuizLauncher()
+        });
         return;
     }
 
@@ -58,16 +47,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
         : (controls.tokens || controls.token);
     if (!tokenGroup) return;
 
-    const isGM = game.user.isGM;
     const toolDef = {
-        name: isGM ? "quiz-night" : "quiz-night-player",
+        name: "quiz-night",
         title: "Quiz Night",
         icon: "fas fa-question-circle",
         button: true,
         order: 13
     };
 
-    const handler = () => (isGM ? openQuizLauncher() : openOrFocusPlayerApp());
+    const handler = () => openQuizLauncher();
     if (Array.isArray(tokenGroup.tools)) {
         toolDef.onClick = handler;
         tokenGroup.tools.push(toolDef);
@@ -84,7 +72,7 @@ Hooks.on("chatMessage", (log, message, chatData) => {
         if (game.user.isGM) {
             openQuizLauncher();
         } else {
-            openOrFocusPlayerApp();
+            getActivePlayerApp()?.resumeFromDock?.();
         }
         return false;
     }

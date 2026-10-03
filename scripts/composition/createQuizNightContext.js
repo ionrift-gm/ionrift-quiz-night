@@ -28,7 +28,7 @@ export function registerSettings() {
         name: "Token toolbar button",
         hint: "Show the Quiz Night button on the token controls.",
         scope: "client",
-        config: true,
+        config: false,
         type: Boolean,
         default: true,
         onChange: () => {
@@ -41,7 +41,7 @@ export function registerSettings() {
         name: "Debug Mode",
         hint: "Enable verbose logging for Quiz Night.",
         scope: "client",
-        config: true,
+        config: false,
         type: Boolean,
         default: false
     });
@@ -61,7 +61,7 @@ export function registerSettings() {
         hint: "Open Quiz Night.",
         icon: "fas fa-question-circle",
         type: QuizNightOpenMenu,
-        restricted: false
+        restricted: true
     });
 }
 
@@ -163,6 +163,7 @@ export function registerAPI() {
             if (app) {
                 setActiveMasterApp(app);
                 app.render({ force: true });
+                app.syncPlayers();
                 Logger.log("Recovered active quiz session after reload.");
             }
             return app;
@@ -223,14 +224,12 @@ export function initSocketsForPlayer() {
     });
 
     if (!game.user.isGM) {
-        setTimeout(() => {
-            SocketHandler.requestState();
-            SocketHandler.register((data) => {
-                if (data.type === "state:sync" && data.active && !getActivePlayerApp()) {
-                    openOrFocusPlayerApp();
-                }
-            });
-        }, 2000);
+        SocketHandler.register((data) => {
+            if (data.type === "state:sync" && data.active && !getActivePlayerApp()) {
+                openOrFocusPlayerApp();
+            }
+        });
+        setTimeout(() => SocketHandler.requestState(), 2000);
     }
 }
 

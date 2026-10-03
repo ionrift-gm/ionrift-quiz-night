@@ -1,0 +1,38 @@
+/* Quiz Night dock. Shown when a live quiz window is closed. */
+
+#ionrift-quiz-dock {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1rem;
+    background: rgba(20, 22, 30, 0.9);
+    border: 1px solid rgba(232, 67, 147, 0.35);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+#ionrift-quiz-dock i {
+    color: rgba(255, 130, 200, 0.9);
+}
+
+#ionrift-quiz-dock button {
+    padding: 0.25rem 0.75rem;
+    background: rgba(232, 67, 147, 0.18);
+    border: 1px solid rgba(232, 67, 147, 0.45);
+    border-radius: 4px;
+    color: rgba(255, 160, 200, 0.95);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+#ionrift-quiz-dock button:hover {
+    background: rgba(232, 67, 147, 0.32);
+}

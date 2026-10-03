@@ -26,6 +26,23 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
 }
+.qm-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.qm-abandon {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: rgba(255, 180, 180, 0.95);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+.qm-abandon:hover {
+    background: rgba(239, 68, 68, 0.16);
+}
 .qm-header h3 {
     margin: 0;
     font-size: 0.95rem;

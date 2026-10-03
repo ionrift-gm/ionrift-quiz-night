@@ -6,6 +6,8 @@ import { TimerEngine } from "../services/TimerEngine.js";
 import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { PrizeDelivery } from "../services/PrizeDelivery.js";
 import { SessionPersistence } from "../services/SessionPersistence.js";
+import { planWindowClose, isQuizFormallyStarted } from "../services/SessionWindowPolicy.js";
+import { showQuizDock, hideQuizDock } from "../ui/QuizDock.js";
 import { clearActiveMasterApp } from "../composition/sessionState.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -54,7 +56,8 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             "peek-round": QuizMasterApp.#onPeekRound,
             "timer-extend": QuizMasterApp.#onTimerExtend,
             "toggle-marking-overview": QuizMasterApp.#onToggleMarkingOverview,
-            "reveal-next-prize": QuizMasterApp.#onRevealNextPrize
+            "reveal-next-prize": QuizMasterApp.#onRevealNextPrize,
+            "abandon-quiz": QuizMasterApp.#onAbandonQuiz
         }
     };
 
@@ -75,6 +78,7 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _ceremonyShown = 0;
     _lockWarningActive = false;
     _lockWarningTimer = null;
+    _docked = false;
 
     constructor(quizData, options = {}) {
         super(options);
@@ -121,6 +125,21 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         Logger.log("Recovered quiz session from persisted state.");
         return app;
+    }
+
+    render(options) {
+        if (this._docked) return this;
+        return super.render(options);
+    }
+
+    resumeFromDock() {
+        this._docked = false;
+        hideQuizDock();
+        return this.render({ force: true });
+    }
+
+    syncPlayers() {
+        this._sendStateSync();
     }
 
     _onRender(context, options) {
@@ -256,7 +275,8 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ceremonyCards: this._ceremonyCards.slice(0, this._ceremonyShown),
             ceremonyHasMore: this._ceremonyShown < this._ceremonyCards.length,
             ceremonyTotal: this._ceremonyCards.length,
-            ceremonyShown: this._ceremonyShown
+            ceremonyShown: this._ceremonyShown,
+            canAbandon: isQuizFormallyStarted(engine.state)
         };
     }
 
@@ -275,6 +295,10 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static async #onStartQuiz(event, target) {
         await this.start();
+    }
+
+    static async #onAbandonQuiz() {
+        await this.close({ abandon: true });
     }
 
     static async #onNextRound(event, target) {
@@ -940,33 +964,53 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return { totalQuestions, playerScores, hardestQuestion: hardest, easiestQuestion: easiest };
     }
 
-    async close(options = {}) {
-        const wasActive = this._engine.state !== "idle" && this._engine.state !== "quiz-end";
-
-        if (!options._forceClose && !options.force && wasActive) {
-            const confirmed = await Dialog.confirm({
-                title: "Close Quizmaster?",
-                content: "<p>A quiz is in progress. Closing will end it and lose all current state. Are you sure?</p>"
-            });
-            if (!confirmed) return;
-        }
-
+    _stopLiveQuiz() {
         this._timer.stop();
         if (this._lockWarningTimer) {
             clearTimeout(this._lockWarningTimer);
             this._lockWarningTimer = null;
         }
         this._lockWarningActive = false;
+    }
 
-        if (wasActive) {
-            SocketHandler.broadcastStateSync({ active: false, state: "idle", aborted: true });
+    async close(options = {}) {
+        const forced = options.force || options._forceClose;
+        const intent = (options.abandon || forced) ? "abandon" : "window";
+        const plan = planWindowClose({
+            role: "gm",
+            state: this._engine?.state,
+            intent
+        });
+
+        if (plan.action === "minimize") {
+            this._docked = true;
+            showQuizDock({
+                label: "Quiz in progress",
+                onResume: () => this.resumeFromDock()
+            });
+            return super.close(options);
         }
 
+        if (plan.action === "end-for-all") {
+            const confirmed = forced || await Dialog.confirm({
+                title: "Abandon quiz?",
+                content: "<p>End this quiz for everyone? This sitting stops, and prizes are not awarded.</p>"
+            });
+            if (!confirmed) return;
+            this._stopLiveQuiz();
+        }
+
+        if (plan.broadcast) {
+            SocketHandler.broadcastStateSync(plan.broadcast);
+        }
+
+        hideQuizDock();
+        this._docked = false;
+        if (plan.clearSession) await SessionPersistence.clear();
         if (this._unregisterSocket) {
             this._unregisterSocket();
             this._unregisterSocket = null;
         }
-        await SessionPersistence.clear();
         clearActiveMasterApp();
         return super.close(options);
     }
