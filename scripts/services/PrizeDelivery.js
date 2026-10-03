@@ -79,11 +79,13 @@ export class PrizeDelivery {
             await existing.update({ "system.quantity": qty });
             return { delivered: true, note: `${doc.name} stacked on ${actor.name} (qty ${qty})` };
         }
+        // guardAll validates and normalises in place; it has no return value.
         const minting = game.ionrift?.library?.minting;
-        const guarded = minting?.guardAll
-            ? await minting.guardAll([data], { origin: "quiz-night-prize" })
-            : [data];
-        await actor.createEmbeddedDocuments("Item", guarded);
+        if (minting?.guardAll) minting.guardAll([data], { moduleId: "ionrift-quiz-night", mode: "create" });
+        const created = await actor.createEmbeddedDocuments("Item", [data]);
+        if (!created?.length) {
+            return { delivered: false, note: `Could not add ${doc.name} to ${actor.name}` };
+        }
         return { delivered: true, note: `${doc.name} added to ${actor.name}` };
     }
 
