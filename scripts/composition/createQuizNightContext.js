@@ -27,7 +27,7 @@ export function registerSettings() {
 
     game.settings.register(MODULE_ID, "showSceneButton", {
         name: "Left toolbar button",
-        hint: "Show Quiz Night on the left token controls. Off leaves that spot free.",
+        hint: "Show Quiz Night on the left token controls.",
         scope: "world",
         config: true,
         type: Boolean,

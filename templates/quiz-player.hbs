@@ -5,7 +5,7 @@
     <div class="qp-section qp-idle">
         <div class="quiz-intro">
             <h2><i class="fas fa-trophy"></i> Quiz Night</h2>
-            <p class="waiting-msg">No quiz is running right now. The quizmaster will open one when ready.</p>
+            <p class="waiting-msg">No quiz is running right now. The GM will open a quiz when ready.</p>
         </div>
     </div>
     {{/if}}
@@ -93,7 +93,7 @@
 
         {{#if timerActive}}
         <div class="closer-banner">
-            <span class="closer-label">Last few minutes</span>
+            <span class="closer-label">Last few moments</span>
             <div class="timer-bar">
                 <div class="timer-bar-fill" style="width: {{math (math timer.remaining "/" timer.total) "*" 100}}%"></div>
             </div>
@@ -274,14 +274,14 @@
         {{/if}}
         {{#if timerActive}}
         <div class="closer-banner">
-            <span class="closer-label">Last few minutes</span>
+            <span class="closer-label">Last few moments</span>
             <div class="timer-bar">
                 <div class="timer-bar-fill" style="width: {{math (math timer.remaining "/" timer.total) "*" 100}}%"></div>
             </div>
             <span class="timer-label">{{timerClock}}</span>
         </div>
         {{/if}}
-        <p class="answered-hint">Change your mind any time before pens down.</p>
+        <p class="answered-hint">You can still change your answers before pens down.</p>
         {{#if paused}}<p class="paused-notice"><i class="fas fa-pause"></i> Clock held</p>{{/if}}
     </div>
     {{/if}}
@@ -291,7 +291,7 @@
     <div class="qp-section qp-locked">
         <div class="lock-icon"><i class="fas fa-lock"></i></div>
         <h3>Pens Down</h3>
-        <p>Answers are locked. The quizmaster will now reveal the answers.</p>
+        <p>Answers are now locked in. The quizmaster will now reveal the answers.</p>
         {{#if answerSheet.length}}
         <div class="answer-sheet">
             <h4>Your answers</h4>

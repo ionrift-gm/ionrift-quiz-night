@@ -215,11 +215,11 @@
         {{/if}}
         </div>
 
-        {{!-- Last-few-minutes closer: optional, GM-started --}}
+        {{!-- Last-few-moments closer: optional, GM-started --}}
         <div class="qm-closer">
             {{#if timerActive}}
             <div class="qm-timer closer-running">
-                <span class="closer-label">Last few minutes</span>
+                <span class="closer-label">Last few moments</span>
                 <div class="timer-bar">
                     <div class="timer-bar-fill" style="width: {{math (math timerRemaining "/" timerTotal) "*" 100}}%"></div>
                 </div>
@@ -227,7 +227,7 @@
             </div>
             {{else}}
             <div class="closer-start">
-                <span class="closer-hint">No clock until you start one. This closes the round.</span>
+                <span class="closer-hint">Starts a last few moments countdown when you're ready to wrap up the round.</span>
                 <div class="closer-presets">
                     {{#each closerPresets}}
                     <button type="button" data-action="start-closer" data-seconds="{{this.seconds}}" class="btn-secondary closer-preset">
@@ -241,7 +241,7 @@
 
         <div class="qm-answer-status">
             <i class="fas fa-users"></i> {{answeredCount}} / {{activePlayerCount}} answered
-            {{#if allAnswered}}{{#if (gt activePlayerCount 0)}}<span class="all-in">All in!</span>{{/if}}{{/if}}
+            {{#if allAnswered}}{{#if (gt activePlayerCount 0)}}<span class="all-in">All done!</span>{{/if}}{{/if}}
         </div>
 
         {{#if playerRoster.length}}
@@ -285,7 +285,7 @@
             </button>
             {{/if}}
             {{#if timerActive}}
-            <button data-action="toggle-pause" class="btn-secondary" title="Hold the last-few-minutes clock">
+            <button data-action="toggle-pause" class="btn-secondary" title="Hold the last-few-moments clock">
                 <i class="fas {{#if paused}}fa-play{{else}}fa-pause{{/if}}"></i>
                 {{#if paused}}Resume{{else}}Hold{{/if}}
             </button>
@@ -473,7 +473,7 @@
         {{/if}}
         {{else}}
         <div class="marking-start">
-            <p><i class="fas fa-lock"></i> Answers locked. Ready to mark.</p>
+            <p><i class="fas fa-lock"></i> Answers are now locked in. Ready to mark.</p>
             <button data-action="mark-next" class="btn-primary btn-large">
                 <i class="fas fa-eye"></i> Reveal First Answer
             </button>
@@ -636,7 +636,7 @@
             {{/each}}
         </div>
         {{else}}
-        <p>Ready to reveal prizes, last place first.</p>
+        <p>Time to reveal the winners and prizes!</p>
         {{/if}}
         {{#if ceremonyHasMore}}
         <button data-action="reveal-next-prize" class="btn-primary btn-large" {{#if ceremonyBusy}}disabled{{/if}}>
