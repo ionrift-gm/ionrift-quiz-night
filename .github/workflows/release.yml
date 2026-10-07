@@ -48,7 +48,15 @@ jobs:
             -x ".gitattributes" \
             -x "*.log" \
             -x "*.lock" \
-            -x "playwright-realtime.log"
+            -x "playwright-realtime.log" \
+            -x "tools/*" \
+            -x "docs/*" \
+            -x "tests/*" \
+            -x "scripts/tests/*" \
+            -x "vitest*" \
+            -x "node_modules/*" \
+            -x "assets/module-icon.png" \
+            -x "assets/screenshots/*"
 
       - name: Verify ZIP sanity
         if: github.event.inputs.dry_run_discord != 'true'
@@ -61,7 +69,7 @@ jobs:
               exit 1
             fi
           done
-          if unzip -l module.zip | grep -qE "(\.git/|\.github/|node_modules/|vitest)"; then
+          if unzip -l module.zip | grep -qE "(\.git/|\.github/|node_modules/|vitest|tools/|module-icon\.png|assets/screenshots/)"; then
             echo "ERROR: ZIP contains excluded paths"
             exit 1
           fi

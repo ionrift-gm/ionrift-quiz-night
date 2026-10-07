@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.2] - 2026-10-07
+
+### Changed
+- Removed an unused image from the module download.
+
 ## [1.0.1] - 2026-10-03
 
 ### Changed
