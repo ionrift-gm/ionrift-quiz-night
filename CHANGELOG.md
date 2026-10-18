@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3] - 2026-10-18
+
+### Changed
+- Clearer wording in the quizmaster and player windows.
+
+### Fixed
+- Better text contrast on quiz chat messages.
+
 ## [1.0.2] - 2026-10-07
 
 ### Changed
