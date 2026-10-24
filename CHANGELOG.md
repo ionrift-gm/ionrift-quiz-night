@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0] - 2026-10-24
+
+### Added
+- Live player roster, answer status, table feed, and quick reactions during a quiz.
+
+### Changed
+- Redesigned the Quizmaster, Player, and Editor windows.
+- Updated the default mystery prize icon to a question-mark token.
+
 ## [1.0.3] - 2026-10-18
 
 ### Changed
