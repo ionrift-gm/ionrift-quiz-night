@@ -1,4 +1,5 @@
 import { Logger } from "../lib/Logger.js";
+import { MODULE_ID } from "../data/constants.js";
 
 export class PrizeDelivery {
 
@@ -81,7 +82,7 @@ export class PrizeDelivery {
         }
         // guardAll validates and normalises in place; it has no return value.
         const minting = game.ionrift?.library?.minting;
-        if (minting?.guardAll) minting.guardAll([data], { moduleId: "ionrift-quiz-night", mode: "create" });
+        if (minting?.guardAll) minting.guardAll([data], { moduleId: MODULE_ID, mode: "create" });
         const created = await actor.createEmbeddedDocuments("Item", [data]);
         if (!created?.length) {
             return { delivered: false, note: `Could not add ${doc.name} to ${actor.name}` };
@@ -135,7 +136,7 @@ export class PrizeDelivery {
     static PRIZE_ART = {
         gold: "icons/commodities/currency/coins-assorted-mix-copper-silver-gold.webp",
         text: "icons/svg/item-bag.svg",
-        mystery: "icons/svg/mystery-man.svg",
+        mystery: "icons/magic/symbols/question-stone-yellow.webp",
         item: "icons/svg/item-bag.svg"
     };
 
@@ -144,7 +145,7 @@ export class PrizeDelivery {
     static TIER_LABELS = {
         first: "1st",
         second: "2nd",
-        consolation: "Everyone"
+        consolation: "Runners-Up"
     };
 
     static async enrichPrize(prize, { revealMystery = false } = {}) {

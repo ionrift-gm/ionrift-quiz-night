@@ -158,13 +158,17 @@
 }
 
 .chip-remove {
-    padding: 0.1rem 0.35rem !important;
-    min-height: 0 !important;
+    padding: 0.15rem 0.4rem !important;
+    min-height: 28px !important;
+    min-width: 28px !important;
     width: auto !important;
     background: transparent !important;
     border: none !important;
     color: rgba(236, 230, 244, 0.7) !important;
     box-shadow: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .chip-remove:hover {

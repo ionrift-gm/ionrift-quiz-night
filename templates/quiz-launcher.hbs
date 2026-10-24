@@ -17,7 +17,10 @@
         {{/each}}
     </div>
     {{else}}
-    <p>No quizzes yet. Create one to get started.</p>
+    <div class="launcher-empty">
+        <i class="fas fa-trophy"></i>
+        <p>No quizzes yet. Create one to get started.</p>
+    </div>
     {{/if}}
     <button type="button" class="btn-primary" data-action="new-quiz"><i class="fas fa-plus"></i> New Quiz</button>
 </div>

@@ -38,7 +38,7 @@
 .chat-message .ionrift-quiz-chat .prize-card,
 .ionrift-quiz-chat .prize-card {
     display: grid !important;
-    grid-template-columns: 3.6rem minmax(0, 1fr) 2rem !important;
+    grid-template-columns: 4.6rem minmax(0, 1fr) 2rem !important;
     gap: 0.1rem 0.35rem !important;
     padding: 0.3rem 0.4rem !important;
     overflow: hidden;

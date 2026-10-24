@@ -24,7 +24,7 @@
             <ul class="prize-item-chips">
                 {{#each this.items}}
                 <li class="prize-item-chip {{#if this.mystery}}is-mystery{{/if}}">
-                    <img src="{{#if this.img}}{{this.img}}{{else}}icons/svg/item-bag.svg{{/if}}" alt="" />
+                    <img src="{{#if this.img}}{{this.img}}{{else}}icons/svg/item-bag.svg{{/if}}" alt="" onerror="this.onerror=null;this.src='icons/svg/item-bag.svg'" />
                     <span>{{#if this.name}}{{this.name}}{{else}}Item{{/if}}</span>
                     <label class="prize-mystery-toggle">
                         <input type="checkbox" data-prize-tier="{{../tier}}" data-prize-field="item-mystery" data-uuid="{{this.uuid}}" {{#if this.mystery}}checked{{/if}} />

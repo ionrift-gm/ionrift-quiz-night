@@ -11,3 +11,11 @@ export const CLOSER_PRESETS = [
     { seconds: 180, label: "3 min" },
     { seconds: 300, label: "5 min" }
 ];
+
+export const QUIZ_EMOTES = [
+    { id: "mug", icon: "fas fa-mug-hot", label: "raises a mug" },
+    { id: "laugh", icon: "fas fa-laugh", label: "chuckles" },
+    { id: "think", icon: "fas fa-brain", label: "ponders" },
+    { id: "cheer", icon: "fas fa-thumbs-up", label: "cheers" },
+    { id: "gasp", icon: "fas fa-surprise", label: "gasps" }
+];

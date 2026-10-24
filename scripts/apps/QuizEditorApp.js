@@ -127,7 +127,7 @@ export class QuizEditorApp extends HandlebarsApplicationMixin(ApplicationV2) {
             selectedRound: this._selectedRound,
             expandedQuestion: this._expandedQuestion,
             hasExpandedQuestion: this._expandedQuestion != null,
-            showSidebar: round ? round.questions.length > 1 : false,
+            showSidebar: round ? round.questions.length >= 1 : false,
             questionAtCap: round ? round.questions.length >= MAX_QUESTIONS_PER_ROUND : false,
             questionCountWarn: round ? round.questions.length >= QUESTION_WARN_COUNT : false,
             round,

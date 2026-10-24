@@ -38,6 +38,15 @@ export function registerSettings() {
         }
     });
 
+    game.settings.register(MODULE_ID, "sharePlayerAnswersOnReveal", {
+        name: "Share all player answers on reveal",
+        hint: "Show every player's submitted answer on player screens during marking. When disabled, players only see their own answers and the correct answer while the GM keeps the full overview.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
+    });
+
     game.settings.register(MODULE_ID, "debug", {
         name: "Debug Mode",
         hint: "Enable verbose logging for Quiz Night.",
@@ -70,6 +79,8 @@ export function registerHelpers() {
     Handlebars.registerHelper("eq", (a, b) => a === b);
     Handlebars.registerHelper("gte", (a, b) => a >= b);
     Handlebars.registerHelper("gt", (a, b) => a > b);
+    Handlebars.registerHelper("or", (...args) => args.slice(0, -1).some(Boolean));
+    Handlebars.registerHelper("and", (...args) => args.slice(0, -1).every(Boolean));
     Handlebars.registerHelper("join", (arr, sep) => Array.isArray(arr) ? arr.join(sep) : "");
     Handlebars.registerHelper("math", (a, op, b) => {
         a = Number(a); b = Number(b);
@@ -105,6 +116,10 @@ export function registerAPI() {
                 return null;
             }
             let app = getActiveMasterApp();
+            if (app && app._engine?.state === "quiz-end") {
+                try { await app.close({ force: true, abandon: true }); } catch {}
+                app = null;
+            }
             if (app) {
                 if (autoStart) {
                     try { await app.close({ force: true }); } catch {}
@@ -112,6 +127,8 @@ export function registerAPI() {
                     setActiveMasterApp(app);
                     app.render({ force: true });
                 } else {
+                    if (app._docked) app.resumeFromDock?.();
+                    else app.bringToFront?.();
                     ui.notifications.warn("A quiz is already in progress.");
                 }
             } else {

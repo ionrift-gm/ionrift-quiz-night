@@ -195,8 +195,6 @@ export class SocketHandler {
         return getSocket().emitToUser(userId, type, payload);
     }
 
-    // --- Domain Broadcasts (GM -> All) ---
-
     static broadcastQuizStart(quizName, prizes) {
         this.emit("quiz:start", { quizName, prizes });
     }
@@ -208,7 +206,8 @@ export class SocketHandler {
             roundTag: roundData.tag,
             roundNumber: roundData.roundNumber,
             totalRounds: roundData.totalRounds,
-            questionCount: roundData.questionCount
+            questionCount: roundData.questionCount,
+            roundsMeta: roundData.roundsMeta || []
         });
     }
 
@@ -224,12 +223,25 @@ export class SocketHandler {
         this.emit("timer:pause", { paused });
     }
 
-    static broadcastTeaser(teaserText, roundNumber) {
-        this.emit("teaser", { text: teaserText, roundNumber });
+    static broadcastTeaser(teaserText, roundNumber, extra = {}) {
+        this.emit("teaser", { text: teaserText, roundNumber, ...extra });
     }
 
-    static broadcastRoundEnd(roundNumber) {
-        this.emit("round:end", { roundNumber });
+    static broadcastRoundEnd(roundNumber, extra = {}) {
+        this.emit("round:end", { roundNumber, ...extra });
+    }
+
+    static broadcastAnswerPulse(answeredByUser = {}) {
+        this.emit("answer:pulse", { answeredByUser });
+    }
+
+    static sendEmote(emoteId, userName, color) {
+        this.emit("table:emote", {
+            userId: globalThis.game?.user?.id,
+            userName: userName || globalThis.game?.user?.name || "Player",
+            color: color || globalThis.game?.user?.color || "#ffdc82",
+            emoteId
+        });
     }
 
     static broadcastQuizEnd(revealData, extra = {}) {
@@ -263,8 +275,6 @@ export class SocketHandler {
     static broadcastStateSync(payload) {
         this.emit("state:sync", payload);
     }
-
-    // --- Domain Requests (Player -> GM) ---
 
     static requestState() {
         this.emitToGM("state:request", { userId: globalThis.game.user.id });

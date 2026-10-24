@@ -218,6 +218,9 @@ export class QuizEngine {
         }
 
         for (const result of playerResults) {
+            if (!result.timedOut && result.answer !== null && result.answer !== undefined) {
+                result.answer = this._getSubmittedDisplayAnswer(result.answer, q, round.type);
+            }
             const history = this.playerHistory.get(result.userId) || [];
             history.push({
                 roundIndex: this.roundIndex,
@@ -232,6 +235,7 @@ export class QuizEngine {
             questionIndex: qi,
             questionNumber: qi + 1,
             questionText: q.text,
+            media: q.media || "",
             correctAnswer: this._getDisplayAnswer(q, round.type),
             playerResults,
             roundType: round.type
@@ -318,11 +322,14 @@ export class QuizEngine {
 
     getSyncSnapshot(quizName, prizes, timerState = {}) {
         const answeredByUser = {};
+        const playerAnswersByUser = {};
         for (const [qi, answers] of this.roundAnswers) {
             for (const [uid, entry] of answers) {
                 if (entry.answer !== null && entry.answer !== undefined && !entry.timedOut) {
                     if (!answeredByUser[uid]) answeredByUser[uid] = [];
                     answeredByUser[uid].push(qi);
+                    if (!playerAnswersByUser[uid]) playerAnswersByUser[uid] = {};
+                    playerAnswersByUser[uid][qi] = entry.answer;
                 }
             }
         }
@@ -341,7 +348,12 @@ export class QuizEngine {
                 roundTag: this.currentRound.tag,
                 roundNumber: this.roundIndex + 1,
                 totalRounds: this.quiz?.rounds?.length || 0,
-                questionCount: this.currentRound.questions?.length || 0
+                questionCount: this.currentRound.questions?.length || 0,
+                roundsMeta: (this.quiz?.rounds || []).map((r, i) => ({
+                    number: i + 1,
+                    name: r.name,
+                    tag: r.tag
+                }))
             } : null,
             question: (this.state === "question") ? this.getPlayerQuestion() : null,
             currentMarkingStep: this.currentMarkingStep,
@@ -349,6 +361,7 @@ export class QuizEngine {
             markingIndex: this.markingIndex,
             timer: timerState,
             answeredByUser,
+            playerAnswersByUser,
             askedQuestions: this.askedQuestions
         };
     }
@@ -535,6 +548,17 @@ export class QuizEngine {
                 r.points = round.pointsPerQuestion;
             }
         }
+    }
+
+    _getSubmittedDisplayAnswer(answer, question, roundType) {
+        if (answer === null || answer === undefined) return null;
+        if (roundType === "multiple-choice" && typeof answer === "number" && Array.isArray(question?.options)) {
+            return question.options[answer] ?? String(answer);
+        }
+        if (roundType === "true-false" && typeof answer === "boolean") {
+            return answer ? "True" : "False";
+        }
+        return String(answer);
     }
 
     _getDisplayAnswer(question, roundType) {

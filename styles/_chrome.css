@@ -41,12 +41,34 @@
 .ionrift-quiz-player .window-header button,
 .ionrift-quiz-prizes .window-header button,
 .ionrift-quiz-launcher-dialog .window-header button,
+.ionrift-quiz-editor i.fas,
+.ionrift-quiz-editor i.fa-solid,
 .ionrift-quiz-editor [class*="fa-"],
+.ionrift-quiz-master i.fas,
+.ionrift-quiz-master i.fa-solid,
 .ionrift-quiz-master [class*="fa-"],
+.ionrift-quiz-player i.fas,
+.ionrift-quiz-player i.fa-solid,
 .ionrift-quiz-player [class*="fa-"],
+.ionrift-quiz-prizes i.fas,
+.ionrift-quiz-prizes i.fa-solid,
 .ionrift-quiz-prizes [class*="fa-"],
+.ionrift-quiz-launcher-dialog i.fas,
+.ionrift-quiz-launcher-dialog i.fa-solid,
 .ionrift-quiz-launcher-dialog [class*="fa-"] {
-    font-family: var(--font-awesome, "Font Awesome 6 Pro", "Font Awesome 6 Free", FontAwesome) !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block;
+}
+
+.ionrift-quiz-master .window-content h2,
+.ionrift-quiz-master .window-content h3,
+.ionrift-quiz-master .window-content h4,
+.ionrift-quiz-player .window-content h2,
+.ionrift-quiz-player .window-content h3,
+.ionrift-quiz-player .window-content h4 {
+    border-bottom: none !important;
 }
 
 .quiz-name-input {
@@ -81,78 +103,6 @@
     background: #0f0a1c !important;
     color: #e2e8f0 !important;
 }
-
-.ionrift-quiz-editor,
-.ionrift-quiz-editor *,
-.ionrift-quiz-master,
-.ionrift-quiz-master *,
-.ionrift-quiz-player,
-.ionrift-quiz-player *,
-.ionrift-quiz-prizes,
-.ionrift-quiz-prizes *,
-.ionrift-quiz-launcher-dialog,
-.ionrift-quiz-launcher-dialog * {
-    scrollbar-color: #c2185b rgba(0, 0, 0, 0.4) !important;
-    scrollbar-width: thin !important;
-}
-
-.ionrift-quiz-editor ::-webkit-scrollbar,
-.ionrift-quiz-editor *::-webkit-scrollbar,
-.ionrift-quiz-master ::-webkit-scrollbar,
-.ionrift-quiz-master *::-webkit-scrollbar,
-.ionrift-quiz-player ::-webkit-scrollbar,
-.ionrift-quiz-player *::-webkit-scrollbar,
-.ionrift-quiz-prizes ::-webkit-scrollbar,
-.ionrift-quiz-prizes *::-webkit-scrollbar,
-.ionrift-quiz-launcher-dialog ::-webkit-scrollbar,
-.ionrift-quiz-launcher-dialog *::-webkit-scrollbar {
-    width: 6px !important;
-    height: 6px !important;
-    background: rgba(0, 0, 0, 0.4) !important;
-}
-
-.ionrift-quiz-editor ::-webkit-scrollbar-track,
-.ionrift-quiz-editor *::-webkit-scrollbar-track,
-.ionrift-quiz-master ::-webkit-scrollbar-track,
-.ionrift-quiz-master *::-webkit-scrollbar-track,
-.ionrift-quiz-player ::-webkit-scrollbar-track,
-.ionrift-quiz-player *::-webkit-scrollbar-track,
-.ionrift-quiz-prizes ::-webkit-scrollbar-track,
-.ionrift-quiz-prizes *::-webkit-scrollbar-track,
-.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-track,
-.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 4px;
-}
-
-.ionrift-quiz-editor ::-webkit-scrollbar-thumb,
-.ionrift-quiz-editor *::-webkit-scrollbar-thumb,
-.ionrift-quiz-master ::-webkit-scrollbar-thumb,
-.ionrift-quiz-master *::-webkit-scrollbar-thumb,
-.ionrift-quiz-player ::-webkit-scrollbar-thumb,
-.ionrift-quiz-player *::-webkit-scrollbar-thumb,
-.ionrift-quiz-prizes ::-webkit-scrollbar-thumb,
-.ionrift-quiz-prizes *::-webkit-scrollbar-thumb,
-.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-thumb,
-.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-thumb {
-    background: #c2185b !important;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.ionrift-quiz-editor ::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-editor *::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-master ::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-master *::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-player ::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-player *::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-prizes ::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-prizes *::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-launcher-dialog ::-webkit-scrollbar-thumb:hover,
-.ionrift-quiz-launcher-dialog *::-webkit-scrollbar-thumb:hover {
-    background: #E84393 !important;
-}
-
 
 /* Tag chips (campaign/rules/general) */
 .tag-chip {
@@ -205,11 +155,11 @@
 /* Round intro card */
 .round-intro-card {
     text-align: center;
-    padding: 1rem;
+    padding: 0.6rem 0.75rem;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.45rem;
 }
 
 .round-intro-card h3,
@@ -328,4 +278,277 @@
 .ionrift-quiz-prizes .window-content > .window-content-label,
 .ionrift-quiz-launcher-dialog .window-content > .window-content-label {
     display: none !important;
+}
+
+/* Shared 2-Column Left Lobby Rail ("At the Table") & Emote Wisps */
+.qp-rail,
+.qm-rail {
+    flex: 0 0 24%;
+    min-width: 162px;
+    max-width: 182px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.5rem 0.4rem;
+    background: rgba(8, 6, 16, 0.55);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+}
+
+.qp-rail-head,
+.qm-rail-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 0 0.15rem 0.3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.qp-rail-head i,
+.qm-rail-head i {
+    color: rgba(255, 130, 200, 0.85);
+    margin-right: 0;
+}
+
+.rail-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.08rem 0.38rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.62rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.rail-count-badge .all-in {
+    color: rgba(80, 200, 120, 0.95);
+}
+
+.qp-roster-stage,
+.qm-roster-stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 2.2rem;
+    padding: 0.35rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+}
+
+/* Respite-style floating Emote Wisps (anchored right above bottom emote bar) */
+.emote-wisp-host {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2.35rem;
+    height: 7.5rem;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 25;
+}
+
+.emote-wisp {
+    position: absolute;
+    bottom: 6px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    background: rgba(14, 10, 24, 0.92);
+    border: 1px solid rgba(232, 67, 147, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 30;
+    animation: emoteFloat 2.8s ease-out forwards;
+}
+
+.emote-wisp i {
+    font-size: 0.72rem;
+    color: var(--emote-color, #e84393);
+    filter: drop-shadow(0 0 4px rgba(232, 67, 147, 0.4));
+}
+
+.emote-wisp-name {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: rgba(235, 230, 245, 0.88);
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes emoteFloat {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px) scale(0.85);
+    }
+    12% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-10px) scale(1);
+    }
+    38% {
+        opacity: 0.85;
+        transform: translateX(-50%) translateY(-42px) scale(0.98);
+    }
+    55% {
+        opacity: 0.25;
+        transform: translateX(-50%) translateY(-68px) scale(0.93);
+    }
+    82% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-102px) scale(0.88);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-112px) scale(0.86);
+    }
+}
+
+/* Bottom Emote Bar inside Left Rail */
+.qp-emote-bar,
+.qm-emote-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    margin-top: auto;
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.quiz-emote-btn {
+    flex: 1 1 0;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    border-radius: 5px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quiz-emote-btn:hover {
+    background: rgba(232, 67, 147, 0.2) !important;
+    border-color: rgba(232, 67, 147, 0.45) !important;
+    color: rgba(255, 200, 230, 0.98) !important;
+    transform: translateY(-1px);
+}
+
+/* Confirmation Modal Overlay (Respite Pattern) */
+.ionrift-armor-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ionrift-armor-modal {
+    background: linear-gradient(145deg, #1e1b2e 0%, #14121f 100%);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    max-width: 380px;
+    width: calc(100% - 2rem);
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.1);
+}
+
+.ionrift-armor-modal i.fas,
+.ionrift-armor-modal i.fa-solid,
+.ionrift-armor-modal [class*="fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block;
+}
+
+.ionrift-armor-modal h3 {
+    margin: 0 0 0.75rem 0;
+    color: #f59e0b;
+    font-size: 1.1rem;
+    border-bottom: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ionrift-armor-modal p {
+    margin: 0 0 1.25rem 0;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.ionrift-armor-modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.btn-armor-confirm,
+.btn-armor-cancel {
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.btn-armor-confirm {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+    border: 1px solid #ef4444 !important;
+    color: #fff !important;
+}
+
+.btn-armor-confirm:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-armor-cancel {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #94a3b8 !important;
+}
+
+.btn-armor-cancel:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #e2e8f0 !important;
 }

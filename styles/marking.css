@@ -2,9 +2,10 @@
 .qm-marking-section {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.45rem;
+    flex: 1 1 auto;
     min-height: 0;
-    flex-shrink: 0;
+    border-bottom: none;
 }
 
 /* Hero card - current question being marked */
@@ -12,13 +13,14 @@
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.4rem 0.55rem;
+    flex-shrink: 0;
 }
 .marking-hero-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.2rem;
 }
 .marking-q-label {
     font-size: 0.7rem;
@@ -31,20 +33,20 @@
     color: rgba(255, 255, 255, 0.35);
 }
 .marking-q-text {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     color: rgba(255, 255, 255, 0.85);
-    margin: 0.2rem 0 0.5rem;
+    margin: 0.08rem 0 0.22rem;
     font-weight: 500;
 }
 .marking-correct-answer {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.5rem;
+    padding: 0.16rem 0.4rem;
     background: rgba(80, 200, 120, 0.1);
     border: 1px solid rgba(80, 200, 120, 0.2);
     border-radius: 4px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.22rem;
 }
 .correct-label {
     font-size: 0.7rem;
@@ -52,7 +54,7 @@
     flex-shrink: 0;
 }
 .correct-text {
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     font-weight: 700;
     color: rgba(80, 200, 120, 1);
 }
@@ -61,20 +63,20 @@
 .marking-player-results {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    margin-bottom: 0.6rem;
-    max-height: 12rem;
+    gap: 0.1rem;
+    margin-bottom: 0.15rem;
+    max-height: 6.8rem;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    padding: 2px;
+    padding: 1px;
 }
 .marking-result-row {
     display: flex;
-    align-items: flex-start;
-    gap: 0.4rem;
-    padding: 0.3rem 0.4rem;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.12rem 0.3rem;
     border-radius: 4px;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     border: 1px solid transparent;
     box-sizing: border-box;
 }
@@ -128,32 +130,36 @@
 
 /* Scrollable log of already-revealed questions */
 .marking-log {
-    max-height: 200px;
+    flex: 1 1 auto;
+    min-height: 4.6rem;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 0.5rem;
+    padding-top: 0.35rem;
 }
 .marking-log-label {
-    font-size: 0.6rem;
+    font-size: 0.56rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: rgba(255, 255, 255, 0.25);
-    padding-bottom: 0.2rem;
+    padding-bottom: 0.1rem;
+    flex-shrink: 0;
 }
 
 .log-entry {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 5px;
     padding: 0.3rem 0.5rem;
+    flex-shrink: 0;
 }
 .log-entry-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.3rem;
+    gap: 0.35rem;
+    margin-bottom: 0.15rem;
 }
 .log-q-label {
     font-size: 0.65rem;
@@ -176,7 +182,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 220px;
     flex-shrink: 0;
 }
 .log-player-answers {
@@ -193,7 +199,7 @@
     padding: 0.1rem 0.4rem;
     border-radius: 3px;
     font-size: 0.65rem;
-    max-width: 160px;
+    max-width: 220px;
     cursor: default;
 }
 .log-player-chip.correct {
@@ -212,7 +218,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80px;
+    max-width: 140px;
     font-style: italic;
 }
 
@@ -245,13 +251,282 @@
     font-style: italic;
 }
 
-/* Marking section - player view */
+/* Unified Scrollable Answer & Reveal Sheet (Player Locked + Marking) */
+.qp-section.qp-marking,
 .qp-marking {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.45rem;
+    flex: 1 1 auto;
     min-height: 0;
     max-height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    align-items: stretch !important;
+    overflow: hidden;
+}
+
+.qp-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.4rem 0.65rem;
+    background: rgba(18, 14, 28, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+    flex-shrink: 0;
+}
+
+.qp-sheet-round {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.player-pens-down-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    color: rgba(254, 243, 199, 0.94);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.player-pens-down-pill i {
+    color: rgba(251, 191, 36, 0.95);
+}
+
+.qp-sheet-header .player-marking-tally {
+    margin: 0;
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    font-size: 0.74rem;
+    width: auto;
+    white-space: nowrap;
+}
+
+.answer-sheet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding-right: 0.15rem;
+}
+
+.answer-sheet-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 7px;
+    background: linear-gradient(180deg, rgba(26, 22, 38, 0.78) 0%, rgba(16, 13, 24, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.answer-sheet-card.is-revealed.is-correct {
+    border-color: rgba(80, 200, 120, 0.36);
+    background: linear-gradient(180deg, rgba(20, 42, 32, 0.48) 0%, rgba(14, 24, 20, 0.68) 100%);
+}
+
+.answer-sheet-card.is-revealed.is-incorrect {
+    border-color: rgba(239, 68, 68, 0.26);
+    background: linear-gradient(180deg, rgba(38, 20, 28, 0.42) 0%, rgba(18, 13, 22, 0.72) 100%);
+}
+
+.answer-sheet-card.is-current-reveal {
+    box-shadow: 0 0 12px rgba(232, 67, 147, 0.2);
+}
+
+.asc-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+}
+
+.asc-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 2px;
+    box-sizing: border-box;
+    display: block;
+}
+
+.asc-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+}
+
+.asc-question-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.asc-q-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: rgba(255, 130, 200, 0.9);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.asc-q-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.3;
+}
+
+.asc-correct-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    background: rgba(80, 200, 120, 0.14);
+    border: 1px solid rgba(80, 200, 120, 0.32);
+    color: rgba(110, 231, 150, 0.98);
+    font-size: 0.74rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.asc-awaiting-pill {
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.32);
+    flex-shrink: 0;
+}
+
+.asc-answer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-top: 0.18rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.asc-my-answer {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.asc-my-label {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+    flex-shrink: 0;
+}
+
+.asc-my-value {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    word-break: break-word;
+}
+
+.asc-my-value.no-answer {
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+    font-weight: 400;
+}
+
+.asc-outcome {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.asc-penciled {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: rgba(251, 191, 36, 0.9);
+}
+
+.asc-verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.12rem 0.42rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.asc-verdict.correct {
+    background: rgba(80, 200, 120, 0.14);
+    color: rgba(110, 231, 150, 0.96);
+}
+
+.asc-verdict.incorrect {
+    background: rgba(239, 68, 68, 0.12);
+    color: rgba(252, 165, 165, 0.9);
+}
+
+.asc-outcome .appeal-btn {
+    margin: 0 !important;
+    min-height: 28px !important;
+    padding: 0.18rem 0.5rem !important;
+    font-size: 0.68rem !important;
+}
+
+.asc-outcome .appeal-pending {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    font-size: 0.68rem;
+    color: rgba(240, 168, 72, 0.95);
+}
+
+.asc-other-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding-top: 0.2rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
 }
 
 /* Hero card on player screen */
@@ -259,7 +534,9 @@
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 .pmh-header {
     display: flex;
@@ -367,6 +644,8 @@
     overflow-y: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding-top: 0.4rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 .pml-entry {
     background: rgba(0, 0, 0, 0.12);
@@ -449,8 +728,8 @@
 .bulk-adj-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0.5rem 0;
+    gap: 0.35rem;
+    margin: 0.25rem 0;
 }
 
 .marking-result-row.probable,
@@ -483,8 +762,10 @@
 }
 
 .adj-btn.tiny {
-    padding: 0.05rem 0.25rem;
+    padding: 0.15rem 0.35rem !important;
     font-size: 0.65rem;
+    min-height: 28px !important;
+    min-width: 28px !important;
 }
 
 
@@ -527,8 +808,8 @@
     font-style: italic;
 }
 .answer-sheet-check {
-    color: rgba(80, 200, 120, 0.7);
-    font-weight: 600;
+    color: rgba(251, 191, 36, 0.85);
+    font-size: 0.72rem;
 }
 
 
@@ -537,34 +818,34 @@
     border: 1px solid rgba(240, 168, 72, 0.5);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(240, 168, 72, 0.25);
     border-radius: 6px;
-    padding: 0.55rem 0.7rem;
-    max-height: 10rem;
+    padding: 0.28rem 0.5rem;
+    max-height: 5.5rem;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.2rem;
 }
 .pab-header {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    font-size: 0.75rem;
+    font-size: 0.66rem;
     font-weight: 800;
     color: rgba(240, 168, 72, 0.95);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.15rem;
 }
 .pab-header i {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
 }
 .pab-item {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.5rem;
+    gap: 0.35rem;
+    padding: 0.15rem 0.35rem;
     border-radius: 4px;
-    font-size: 0.8rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.74rem;
+    margin-bottom: 0.12rem;
     background: rgba(0, 0, 0, 0.25);
 }
 .pab-item:last-child {
@@ -627,7 +908,8 @@
     border: 1px solid transparent !important;
     background: none !important;
     box-shadow: none !important;
-    min-height: 26px !important;
+    min-height: 28px !important;
+    min-width: 28px !important;
     transition: all 0.15s ease;
 }
 .btn-pab-accept {
@@ -651,10 +933,10 @@
 .marking-summary-line {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.4rem;
-    margin-bottom: 0.3rem;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.35rem;
+    margin-bottom: 0.15rem;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.03);
 }
@@ -672,21 +954,22 @@
 
 .marking-controls-row {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     align-items: stretch;
-    margin-top: 0.85rem;
-    padding-top: 0.65rem;
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .marking-controls-row .btn-secondary {
     flex-shrink: 0;
     white-space: nowrap;
-    min-height: 38px;
-    padding: 0.4rem 0.75rem !important;
+    min-height: 32px;
+    padding: 0.3rem 0.65rem !important;
 }
 .marking-controls-row .btn-primary.btn-large {
     flex: 1;
-    min-height: 38px;
+    min-height: 32px;
+    padding: 0.35rem 1rem !important;
 }
 
 
@@ -694,8 +977,9 @@
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    padding: 0.5rem;
-    max-height: 14rem;
+    padding: 0.4rem;
+    max-height: 11rem;
+    flex-shrink: 0;
     overflow: auto;
     scrollbar-gutter: stable;
 }

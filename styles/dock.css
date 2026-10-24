@@ -25,6 +25,8 @@
 
 #ionrift-quiz-dock button {
     padding: 0.25rem 0.75rem;
+    min-height: 28px;
+    min-width: 28px;
     background: rgba(232, 67, 147, 0.18);
     border: 1px solid rgba(232, 67, 147, 0.45);
     border-radius: 4px;
@@ -35,4 +37,11 @@
 
 #ionrift-quiz-dock button:hover {
     background: rgba(232, 67, 147, 0.32);
+}
+
+#ionrift-quiz-dock button:focus,
+#ionrift-quiz-dock button:focus-visible {
+    outline: none !important;
+    border-color: rgba(140, 110, 240, 0.7) !important;
+    box-shadow: 0 0 0 2px rgba(140, 110, 240, 0.35) !important;
 }

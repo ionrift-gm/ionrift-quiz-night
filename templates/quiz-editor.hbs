@@ -73,6 +73,11 @@
                 </div>
                 {{/each}}
             </div>
+            <div class="q-index-footer">
+                <button type="button" class="btn-add q-index-add-btn" data-action="add-question" {{#if ../questionAtCap}}disabled{{/if}}>
+                    <i class="fas fa-plus"></i> Add Question
+                </button>
+            </div>
         </div>
         {{/if}}
 

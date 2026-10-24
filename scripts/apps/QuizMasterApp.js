@@ -1,5 +1,5 @@
 import { Logger } from "../lib/Logger.js";
-import { MODULE_ID, QUESTION_WARN_COUNT, CLOSER_PRESETS } from "../data/constants.js";
+import { MODULE_ID, QUESTION_WARN_COUNT, CLOSER_PRESETS, QUIZ_EMOTES } from "../data/constants.js";
 import { QuizEngine } from "../services/QuizEngine.js";
 import { ScoringEngine } from "../services/ScoringEngine.js";
 import { TimerEngine } from "../services/TimerEngine.js";
@@ -7,27 +7,14 @@ import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { PrizeDelivery } from "../services/PrizeDelivery.js";
 import { PrizeCeremony } from "../services/PrizeCeremony.js";
 import { SessionPersistence } from "../services/SessionPersistence.js";
+import { QuizMasterPresenter } from "../services/QuizMasterPresenter.js";
 import { planWindowClose, isQuizFormallyStarted } from "../services/SessionWindowPolicy.js";
 import { showQuizDock, hideQuizDock } from "../ui/QuizDock.js";
+import { confirmQuizModal, isQuizModalOpen } from "../ui/confirmQuizModal.js";
+import { renderEmoteWisp } from "../ui/emoteWisp.js";
 import { clearActiveMasterApp } from "../composition/sessionState.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-
-const ROUND_TYPE_ICONS = {
-    "text-answer": "fa-keyboard",
-    "multiple-choice": "fa-list-ol",
-    "true-false": "fa-check-double",
-    picture: "fa-image",
-    "nearest-number": "fa-bullseye"
-};
-
-const ROUND_TYPE_LABELS = {
-    "text-answer": "Text",
-    "multiple-choice": "MC",
-    "true-false": "T/F",
-    picture: "Picture",
-    "nearest-number": "Nearest"
-};
 
 export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
@@ -38,7 +25,7 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             title: "Quiz Night: Quizmaster",
             resizable: true
         },
-        position: { width: 520, height: 700 },
+        position: { width: 780, height: 670 },
         actions: {
             "start-quiz": QuizMasterApp.#onStartQuiz,
             "next-round": QuizMasterApp.#onNextRound,
@@ -58,7 +45,8 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             "timer-extend": QuizMasterApp.#onTimerExtend,
             "toggle-marking-overview": QuizMasterApp.#onToggleMarkingOverview,
             "reveal-next-prize": QuizMasterApp.#onRevealNextPrize,
-            "abandon-quiz": QuizMasterApp.#onAbandonQuiz
+            "abandon-quiz": QuizMasterApp.#onAbandonQuiz,
+            "send-emote": QuizMasterApp.#onSendEmote
         }
     };
 
@@ -78,8 +66,13 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _ceremony = new PrizeCeremony();
     _revealing = false;
     _lockWarningActive = false;
+    _lockWarningRemaining = 0;
     _lockWarningTimer = null;
+    _lockWarningInterval = null;
     _docked = false;
+    _lastEmoteLine = "";
+    _lastTeaser = "";
+    _userConnectedHook = null;
 
     /** Views kept for callers (and screenshot tooling) that predate PrizeCeremony. */
     get _ceremonyCards() {
@@ -117,16 +110,17 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this._timer.onExpire = () => {
             if (this._engine.state === "question") {
                 Logger.log("Timer expired, locking round.");
-                if (this._lockWarningTimer) {
-                    clearTimeout(this._lockWarningTimer);
-                    this._lockWarningTimer = null;
-                }
-                this._lockWarningActive = false;
+                this._clearLockWarning();
                 QuizMasterApp.#performLock.call(this);
             }
         };
 
         this._unregisterSocket = SocketHandler.register((data) => this._handleSocket(data));
+        if (typeof Hooks !== "undefined" && Hooks.on) {
+            this._userConnectedHook = Hooks.on("userConnected", () => {
+                if (this.rendered) this.render();
+            });
+        }
     }
 
     static recover(snapshot) {
@@ -199,50 +193,30 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const hasProbable = currentStep?.playerResults?.some(r => r.confidence === "probable" && !r.correct && !r.adjudicated);
         const hasAppeals = currentStep?.playerResults?.some(r => r.appealed && !r.correct);
 
-        const questionStrip = this._buildQuestionStrip(engine);
-        const nextQuestionPreview = this._getNextQuestionPreview(engine);
-        const peekedQuestion = this._getPeekedQuestion(engine);
-        const roundTimeline = this._buildRoundTimeline(engine);
-        const peekedRound = this._getPeekedRound();
-        const nextRoundPreview = this._getNextRoundPreview(engine);
+        const questionStrip = QuizMasterPresenter.buildQuestionStrip(engine, this._peekedQuestionIndex);
+        const nextQuestionPreview = QuizMasterPresenter.getNextQuestionPreview(engine);
+        const peekedQuestion = QuizMasterPresenter.getPeekedQuestion(engine, this._peekedQuestionIndex);
+        const roundTimeline = QuizMasterPresenter.buildRoundTimeline(engine, this._quizData, this._peekedRoundIndex);
+        const peekedRound = QuizMasterPresenter.getPeekedRound(this._quizData, this._peekedRoundIndex);
+        const nextRoundPreview = QuizMasterPresenter.getNextRoundPreview(engine, this._quizData);
         const showFullRoundMap = ["idle", "running", "round-intro", "round-end", "quiz-end"].includes(engine.state);
 
         let roundSummary = null;
         if (engine.state === "round-end" && engine.revealLog.length) {
-            roundSummary = this._buildRoundSummary(engine, scores);
+            roundSummary = QuizMasterPresenter.buildRoundSummary(engine, scores);
         }
 
-        const roster = this._buildPlayerRoster(engine);
-
-        let stateLabel;
-        switch (engine.state) {
-            case "question":
-                stateLabel = `Q${engine.questionIndex + 1}/${engine.currentRound?.questions?.length || 0} \u00b7 ${engine.answeredCount}/${engine.activePlayerCount} answered`;
-                break;
-            case "marking":
-                stateLabel = `Marking ${engine.markingIndex}/${engine.currentRound?.questions?.length || 0}`;
-                break;
-            case "round-end":
-                stateLabel = `R${engine.roundIndex + 1}/${this._quizData?.rounds?.length || 0} complete`;
-                break;
-            case "round-intro":
-                stateLabel = `R${engine.roundIndex + 1}/${this._quizData?.rounds?.length || 0}`;
-                break;
-            case "quiz-end":
-                stateLabel = "Finished";
-                break;
-            default:
-                stateLabel = "Ready";
-        }
+        const roster = QuizMasterPresenter.buildPlayerRoster(engine);
+        const stateLabel = QuizMasterPresenter.buildStateLabel(engine, this._quizData);
 
         let markingMatrix = null;
         let pendingAdjudications = [];
         let markingSummary = null;
         if (isMarking) {
-            const cockpit = this._buildMarkingCockpit(engine, currentStep);
-            markingMatrix = cockpit.matrix;
-            pendingAdjudications = cockpit.adjudications;
-            markingSummary = cockpit.summary;
+            const overview = QuizMasterPresenter.buildMarkingOverview(engine, currentStep);
+            markingMatrix = overview.matrix;
+            pendingAdjudications = overview.adjudications;
+            markingSummary = overview.summary;
         }
 
         return {
@@ -268,6 +242,7 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             timerClock: TimerEngine.formatClock(this._timer.remaining),
             closerPresets: CLOSER_PRESETS,
             lockWarningActive: this._lockWarningActive,
+            lockWarningRemaining: this._lockWarningRemaining || 10,
             scores,
             isMarking,
             currentStep,
@@ -295,12 +270,18 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             hasPendingAdjudications: pendingAdjudications.length > 0,
             markingSummary,
             prizeTiers: PrizeDelivery.toPrizeTierList(this._prizeDisplay),
-            ceremonyCards: this._ceremony.visibleCards,
+            ceremonyCards: [...this._ceremony.visibleCards].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999)),
             ceremonyHasMore: this._ceremony.hasMore,
             ceremonyTotal: this._ceremony.total,
             ceremonyShown: this._ceremony.shown,
             ceremonyBusy: this._revealing,
-            canAbandon: isQuizFormallyStarted(engine.state)
+            canAbandon: isQuizFormallyStarted(engine.state),
+            showLobbyRoster: ["idle", "running", "round-intro"].includes(engine.state),
+            showScoreboard: scores.length >= 1 && !["quiz-end"].includes(engine.state),
+            canShowTeaser: scores.length >= 2 && !["idle", "quiz-end"].includes(engine.state),
+            emotes: QUIZ_EMOTES,
+            lastEmoteLine: this._lastEmoteLine,
+            lastTeaser: this._lastTeaser
         };
     }
 
@@ -322,7 +303,29 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static async #onAbandonQuiz() {
-        await this.close({ abandon: true });
+        if (this._abandonInFlight || isQuizModalOpen()) return;
+        this._abandonInFlight = true;
+        try {
+            await this.close({ abandon: true });
+        } finally {
+            this._abandonInFlight = false;
+        }
+    }
+
+    static #onSendEmote(event, target) {
+        const emoteId = target.dataset.emoteId;
+        const emote = QUIZ_EMOTES.find(e => e.id === emoteId);
+        if (!emote) return;
+        const userName = game.user?.name || "Quizmaster";
+        const color = game.user?.color || "#ffdc82";
+        if (!this._handleEmote(emote, userName, color)) return;
+        SocketHandler.sendEmote(emote.id, userName, color);
+    }
+
+    _handleEmote(emote, userName, color = "#ffdc82") {
+        const line = renderEmoteWisp(this.element, emote, userName, color);
+        if (line) this._lastEmoteLine = line;
+        return Boolean(line);
     }
 
     static async #onNextRound(event, target) {
@@ -330,12 +333,15 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const isLastRound = (this._engine.roundIndex + 1) >= (this._quizData.rounds?.length || 0);
 
         if (isLastRound) {
-            const confirmed = await Dialog.confirm({
+            const confirmed = await confirmQuizModal({
                 title: "Final Round Complete",
-                content: "<p>All rounds are finished. Proceed to final results and the prize reveal?</p>"
+                message: "All rounds are finished. Proceed to final results and the prize reveal?",
+                confirmLabel: "Reveal Results",
+                cancelLabel: "Stay Here",
+                confirmIcon: "fa-trophy"
             });
             if (!confirmed) return;
-            await QuizMasterApp.#onEndQuiz.call(this, event, target);
+            await QuizMasterApp.#onEndQuiz.call(this, event, target, { force: true });
             return;
         }
 
@@ -351,7 +357,12 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             tag: round.tag,
             roundNumber: this._engine.roundIndex + 1,
             totalRounds: this._quizData.rounds.length,
-            questionCount: round.questions.length
+            questionCount: round.questions.length,
+            roundsMeta: (this._quizData.rounds || []).map((r, i) => ({
+                number: i + 1,
+                name: r.name,
+                tag: r.tag
+            }))
         });
 
         this._chatAnnounce(
@@ -380,9 +391,12 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             const total = this._engine.currentRound?.questions?.length || 0;
             const asked = this._engine.questionIndex + 1;
             const remaining = total - asked;
-            const confirmed = await Dialog.confirm({
-                title: "Pens Down",
-                content: `<p>Lock answers now? ${remaining} question${remaining !== 1 ? "s have" : " has"} not been asked yet.</p>`
+            const confirmed = await confirmQuizModal({
+                title: "Pens Down?",
+                message: `Lock answers now? ${remaining} question${remaining !== 1 ? "s have" : " has"} not been asked yet.`,
+                confirmLabel: "Lock Round",
+                cancelLabel: "Keep Asking",
+                confirmIcon: "fa-lock"
             });
             if (!confirmed) return;
         }
@@ -390,23 +404,48 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const unanswered = this._engine.activePlayerCount - this._engine.answeredCount;
         if (!this._lockWarningActive && unanswered > 0) {
             this._lockWarningActive = true;
+            this._lockWarningRemaining = 10;
             SocketHandler.broadcastLockWarning(10);
             this.render();
+            this._startLockWarningCountdown(10);
 
             this._lockWarningTimer = setTimeout(() => {
-                this._lockWarningTimer = null;
-                this._lockWarningActive = false;
+                this._clearLockWarning();
                 QuizMasterApp.#performLock.call(this);
             }, 10000);
             return;
         }
 
+        this._clearLockWarning();
+        QuizMasterApp.#performLock.call(this);
+    }
+
+    _startLockWarningCountdown(seconds = 10) {
+        if (this._lockWarningInterval) {
+            clearInterval(this._lockWarningInterval);
+            this._lockWarningInterval = null;
+        }
+        this._lockWarningRemaining = seconds;
+        this._lockWarningInterval = setInterval(() => {
+            this._lockWarningRemaining = Math.max(1, this._lockWarningRemaining - 1);
+            this.element?.querySelectorAll?.(".lock-warning-seconds")?.forEach(el => {
+                el.textContent = String(this._lockWarningRemaining);
+            });
+            SocketHandler.broadcastLockWarning(this._lockWarningRemaining);
+        }, 1000);
+    }
+
+    _clearLockWarning() {
         if (this._lockWarningTimer) {
             clearTimeout(this._lockWarningTimer);
             this._lockWarningTimer = null;
         }
+        if (this._lockWarningInterval) {
+            clearInterval(this._lockWarningInterval);
+            this._lockWarningInterval = null;
+        }
         this._lockWarningActive = false;
-        QuizMasterApp.#performLock.call(this);
+        this._lockWarningRemaining = 0;
     }
 
     static #performLock() {
@@ -426,7 +465,25 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const engine = this._engine;
 
         if (!step) {
-            SocketHandler.broadcastRoundEnd(engine.roundIndex + 1);
+            const scores = ScoringEngine.calculateScores(engine.playerHistory);
+            const nudges = ScoringEngine.generateAllPlayerNudges(
+                scores,
+                engine.currentRound?.pointsPerQuestion || 10
+            );
+            const roundInfo = engine.currentRound ? {
+                roundName: engine.currentRound.name,
+                roundType: engine.currentRound.type,
+                roundTag: engine.currentRound.tag,
+                roundNumber: engine.roundIndex + 1,
+                totalRounds: this._quizData?.rounds?.length || 0,
+                questionCount: engine.currentRound.questions?.length || 0,
+                roundsMeta: (this._quizData?.rounds || []).map((r, i) => ({
+                    number: i + 1,
+                    name: r.name,
+                    tag: r.tag
+                }))
+            } : null;
+            SocketHandler.broadcastRoundEnd(engine.roundIndex + 1, { nudges, roundInfo });
             this.render();
             return;
         }
@@ -442,9 +499,12 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static async #onSkipQuestion(event, target) {
-        const confirmed = await Dialog.confirm({
-            title: "Skip Question",
-            content: "<p>Skip this question? It will not appear during marking.</p>"
+        const confirmed = await confirmQuizModal({
+            title: "Skip Question?",
+            message: "Skip this question? It will not appear during marking.",
+            confirmLabel: "Skip Question",
+            cancelLabel: "Cancel",
+            confirmIcon: "fa-forward"
         });
         if (!confirmed) return;
 
@@ -495,9 +555,17 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static #onShowTeaser(event, target) {
         const scores = ScoringEngine.calculateScores(this._engine.playerHistory);
-        const teaser = ScoringEngine.generateTeaser(scores, this._engine.roundIndex + 1);
+        const roundSummary = this._engine.revealLog.length
+            ? QuizMasterPresenter.buildRoundSummary(this._engine, scores)
+            : null;
+        const teaser = ScoringEngine.generateTeaser(scores, this._engine.roundIndex + 1, roundSummary);
+        const nudges = ScoringEngine.generateAllPlayerNudges(
+            scores,
+            this._engine.currentRound?.pointsPerQuestion || 10
+        );
+        this._lastTeaser = teaser;
 
-        SocketHandler.broadcastTeaser(teaser, this._engine.roundIndex + 1);
+        SocketHandler.broadcastTeaser(teaser, this._engine.roundIndex + 1, { nudges });
 
         this._chatAnnounce(
             `<p><i class="fas fa-eye-slash"></i> <em>${teaser}</em></p>`
@@ -508,9 +576,12 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static async #onEndQuiz(event, target, options = {}) {
         const force = options?.force || options?._forceClose || target?.dataset?.force === "true";
-        const confirmed = force || await Dialog.confirm({
+        const confirmed = force || await confirmQuizModal({
             title: "End Quiz?",
-            content: "<p>This will announce final results. Prizes are handed out as you reveal each placing. This cannot be undone.</p>"
+            message: "This will announce final results. Prizes are handed out as you reveal each placing. This cannot be undone.",
+            confirmLabel: "End Quiz",
+            cancelLabel: "Continue Quiz",
+            confirmIcon: "fa-stop"
         });
         if (!confirmed) return;
 
@@ -617,14 +688,26 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     static #onPeekQuestion(event, target) {
-        const idx = Number(target.dataset.questionIndex);
+        const raw = target.dataset.questionIndex;
+        if (raw === undefined || raw === "") {
+            this._peekedQuestionIndex = null;
+            this.render();
+            return;
+        }
+        const idx = Number(raw);
         if (!Number.isFinite(idx)) return;
         this._peekedQuestionIndex = this._peekedQuestionIndex === idx ? null : idx;
         this.render();
     }
 
     static #onPeekRound(event, target) {
-        const idx = Number(target.dataset.roundIndex);
+        const raw = target.dataset.roundIndex;
+        if (raw === undefined || raw === "") {
+            this._peekedRoundIndex = null;
+            this.render();
+            return;
+        }
+        const idx = Number(raw);
         if (!Number.isFinite(idx)) return;
         this._peekedRoundIndex = this._peekedRoundIndex === idx ? null : idx;
         this.render();
@@ -633,257 +716,6 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static #onToggleMarkingOverview(event, target) {
         this._showMarkingOverview = !this._showMarkingOverview;
         this.render();
-    }
-
-    _buildMarkingCockpit(engine, currentStep) {
-        const allQuestions = engine.currentRound?.questions || [];
-        const revealedMap = new Map();
-        for (const entry of (engine.revealLog || [])) {
-            revealedMap.set(entry.questionIndex, entry);
-        }
-        if (currentStep && !revealedMap.has(currentStep.questionIndex)) {
-            revealedMap.set(currentStep.questionIndex, currentStep);
-        }
-
-        const playerOrder = [];
-        const playerSeen = new Set();
-        for (const entry of revealedMap.values()) {
-            for (const r of (entry.playerResults || [])) {
-                if (!playerSeen.has(r.userId)) {
-                    playerSeen.add(r.userId);
-                    playerOrder.push({ userId: r.userId, name: r.name });
-                }
-            }
-        }
-
-        const playerTotals = new Map();
-        for (const p of playerOrder) {
-            playerTotals.set(p.userId, { roundScore: 0, roundCorrect: 0 });
-        }
-
-        const matrixQuestions = allQuestions.map((q, i) => {
-            const entry = revealedMap.get(i);
-            const revealed = !!entry;
-            let correctPct = 0;
-            const playerResults = [];
-
-            if (revealed && entry.playerResults) {
-                const total = entry.playerResults.length;
-                const correctCount = entry.playerResults.filter(r => r.correct).length;
-                correctPct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-
-                const resultMap = new Map();
-                for (const r of entry.playerResults) {
-                    resultMap.set(r.userId, r);
-                    if (r.correct) {
-                        const t = playerTotals.get(r.userId);
-                        if (t) {
-                            t.roundCorrect++;
-                            t.roundScore += r.points || 0;
-                        }
-                    }
-                }
-
-                for (const p of playerOrder) {
-                    const r = resultMap.get(p.userId);
-                    if (!r) playerResults.push({ state: "pending" });
-                    else if (r.correct) playerResults.push({ state: "correct" });
-                    else if (r.timedOut) playerResults.push({ state: "timeout" });
-                    else if (r.confidence === "probable") playerResults.push({ state: "probable" });
-                    else playerResults.push({ state: "incorrect" });
-                }
-            }
-
-            return { index: i, number: i + 1, text: q.text || "", correctPct, revealed, playerResults };
-        });
-
-        const matrixPlayers = playerOrder.map(p => {
-            const t = playerTotals.get(p.userId) || { roundScore: 0, roundCorrect: 0 };
-            const shortName = p.name.length > 6 ? p.name.slice(0, 5) + "." : p.name;
-            return { userId: p.userId, name: p.name, shortName, roundScore: t.roundScore, roundCorrect: t.roundCorrect };
-        });
-
-        const matrix = {
-            questions: matrixQuestions,
-            players: matrixPlayers,
-            hasData: matrixQuestions.some(q => q.revealed)
-        };
-
-        const adjudications = [];
-        for (const entry of revealedMap.values()) {
-            for (const result of (entry.playerResults || [])) {
-                if (result.appealed && !result.correct) {
-                    adjudications.push({
-                        questionIndex: entry.questionIndex,
-                        questionNumber: entry.questionNumber,
-                        userId: result.userId,
-                        name: result.name,
-                        answer: result.timedOut ? "No answer" : result.answer,
-                        type: "appeal"
-                    });
-                } else if (result.confidence === "probable" && !result.adjudicated && !result.correct) {
-                    adjudications.push({
-                        questionIndex: entry.questionIndex,
-                        questionNumber: entry.questionNumber,
-                        userId: result.userId,
-                        name: result.name,
-                        answer: result.timedOut ? "No answer" : result.answer,
-                        type: "probable"
-                    });
-                }
-            }
-        }
-
-        let summary = null;
-        if (currentStep?.playerResults) {
-            const results = currentStep.playerResults;
-            summary = {
-                correctCount: results.filter(r => r.correct).length,
-                probableCount: results.filter(r => r.confidence === "probable" && !r.correct).length,
-                timedOutCount: results.filter(r => r.timedOut).length,
-                totalCount: results.length
-            };
-        }
-
-        return { matrix, adjudications, summary };
-    }
-
-    _buildQuestionStrip(engine) {
-        const round = engine.currentRound;
-        if (!round || engine.state === "idle" || engine.state === "quiz-end") return [];
-
-        const totalPlayers = engine.activePlayerCount;
-        return round.questions.map((q, i) => {
-            const isAsked = i <= engine.questionIndex;
-            const isCurrent = i === engine.questionIndex;
-
-            let status = "upcoming";
-            if (isCurrent) status = "current";
-            else if (isAsked) status = "asked";
-
-            const answers = engine.roundAnswers.get(i);
-            const answerCount = answers?.size || 0;
-
-            return {
-                index: i,
-                number: i + 1,
-                status,
-                answerCount,
-                totalPlayers,
-                text: q.text || "",
-                isPeeked: this._peekedQuestionIndex === i
-            };
-        });
-    }
-
-    _getNextQuestionPreview(engine) {
-        const round = engine.currentRound;
-        if (!round) return null;
-        const nextIdx = engine.questionIndex + 1;
-        if (nextIdx >= round.questions.length) return null;
-        const text = round.questions[nextIdx].text || "";
-        return text.length > 80 ? text.slice(0, 80) + "..." : text;
-    }
-
-    _getPeekedQuestion(engine) {
-        if (this._peekedQuestionIndex === null) return null;
-        const round = engine.currentRound;
-        if (!round) return null;
-        const q = round.questions[this._peekedQuestionIndex];
-        if (!q) return null;
-        const answers = engine.roundAnswers.get(this._peekedQuestionIndex);
-        const answerCount = answers?.size || 0;
-        return {
-            index: this._peekedQuestionIndex,
-            number: this._peekedQuestionIndex + 1,
-            text: q.text,
-            answerCount,
-            totalPlayers: engine.activePlayerCount
-        };
-    }
-
-    _buildRoundTimeline(engine) {
-        const rounds = this._quizData?.rounds || [];
-        if (!rounds.length) return [];
-
-        const current = engine.roundIndex;
-        const state = engine.state;
-
-        return rounds.map((r, i) => {
-            let status = "upcoming";
-            if (state === "quiz-end" || (current >= 0 && i < current) || (state === "round-end" && i === current)) {
-                status = "done";
-            } else if (state === "round-end" && i === current + 1) {
-                status = "next";
-            } else if (current === i && state !== "idle" && state !== "running") {
-                status = "current";
-            } else if ((state === "idle" || state === "running") && i === 0) {
-                status = "next";
-            }
-
-            return {
-                index: i,
-                number: i + 1,
-                name: r.name || `Round ${i + 1}`,
-                type: r.type || "text-answer",
-                typeIcon: ROUND_TYPE_ICONS[r.type] || "fa-question",
-                typeLabel: ROUND_TYPE_LABELS[r.type] || r.type,
-                questionCount: r.questions?.length || 0,
-                status,
-                isPeeked: this._peekedRoundIndex === i
-            };
-        });
-    }
-
-    _getPeekedRound() {
-        if (this._peekedRoundIndex === null) return null;
-        const rounds = this._quizData?.rounds || [];
-        const round = rounds[this._peekedRoundIndex];
-        if (!round) return null;
-
-        return {
-            index: this._peekedRoundIndex,
-            number: this._peekedRoundIndex + 1,
-            name: round.name || `Round ${this._peekedRoundIndex + 1}`,
-            typeLabel: ROUND_TYPE_LABELS[round.type] || round.type,
-            questions: (round.questions || []).map((q, i) => ({
-                number: i + 1,
-                text: q.text || "",
-                answer: this._formatQuestionAnswer(q, round.type)
-            }))
-        };
-    }
-
-    _getNextRoundPreview(engine) {
-        const rounds = this._quizData?.rounds || [];
-        if (!rounds.length || engine.state === "quiz-end") return null;
-
-        const nextIdx = (engine.state === "idle" || engine.state === "running")
-            ? 0
-            : engine.roundIndex + 1;
-        if (nextIdx < 0 || nextIdx >= rounds.length) return null;
-
-        const round = rounds[nextIdx];
-        const name = round.name || `Round ${nextIdx + 1}`;
-        const count = round.questions?.length || 0;
-        const type = ROUND_TYPE_LABELS[round.type] || "";
-        return `${name} (${count} questions${type ? `, ${type}` : ""})`;
-    }
-
-    _formatQuestionAnswer(question, roundType) {
-        if (!question) return "";
-        if (roundType === "multiple-choice") {
-            const idx = question.correctIndex;
-            const opt = question.options?.[idx];
-            if (opt == null) return "";
-            const letter = ["A", "B", "C", "D"][idx] || String(idx + 1);
-            return `${letter}. ${opt}`;
-        }
-        if (roundType === "true-false") {
-            if (question.answer === true || question.answer === "true") return "True";
-            if (question.answer === false || question.answer === "false") return "False";
-        }
-        return question.answer != null ? String(question.answer) : "";
     }
 
     _rebroadcastMarking() {
@@ -900,19 +732,22 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         switch (data.type) {
             case "answer:submit":
                 if (!game.user.isGM) return;
+                if (data.senderId && data.userId && data.senderId !== data.userId) return;
                 this._engine.submitAnswer(
-                    data.userId,
+                    data.senderId || data.userId,
                     data.answer,
                     data.questionIndex,
                     data.timestamp,
                     {}
                 );
+                SocketHandler.broadcastAnswerPulse(QuizMasterPresenter.buildAnsweredByUserMap(this._engine));
                 this.render();
                 break;
 
             case "answer:appeal":
                 if (!game.user.isGM) return;
-                this._engine.flagAppeal(data.userId, data.questionIndex);
+                if (data.senderId && data.userId && data.senderId !== data.userId) return;
+                this._engine.flagAppeal(data.senderId || data.userId, data.questionIndex);
                 this._rebroadcastMarking();
                 this.render();
                 break;
@@ -920,7 +755,21 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
             case "state:request":
                 if (!game.user.isGM) return;
                 this._sendStateSync();
+                this.render();
                 break;
+
+            case "table:emote": {
+                if (data.userId && data.userId === game.user?.id) break;
+                const emote = QUIZ_EMOTES.find(e => e.id === data.emoteId);
+                if (emote) {
+                    const chipCount = this.element?.querySelectorAll?.(".roster-chip")?.length ?? 0;
+                    if (chipCount !== this._engine.activePlayerCount) {
+                        this.render();
+                    }
+                    this._handleEmote(emote, data.userName || "Player", data.color || "#ffdc82");
+                }
+                break;
+            }
         }
     }
 
@@ -935,6 +784,13 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 expired: false
             }
         );
+        if (this._engine.state === "round-end") {
+            const scores = ScoringEngine.calculateScores(this._engine.playerHistory);
+            payload.nudges = ScoringEngine.generateAllPlayerNudges(
+                scores,
+                this._engine.currentRound?.pointsPerQuestion || 10
+            );
+        }
         if (this._engine.state === "quiz-end" && this._finalReveal) {
             payload.active = false;
             payload.finalReveal = this._finalReveal;
@@ -965,68 +821,9 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }, extra);
     }
 
-    _buildPlayerRoster(engine) {
-        const players = game.users.filter(u => !u.isGM && u.active);
-        const currentAnswers = engine.roundAnswers.get(engine.questionIndex);
-        return players.map(u => ({
-            name: u.name,
-            initial: u.name.charAt(0).toUpperCase(),
-            color: u.color || "#ffffff",
-            answered: currentAnswers?.has(u.id) && currentAnswers.get(u.id).answer !== null
-        }));
-    }
-
-    _buildRoundSummary(engine, cumulativeScores) {
-        const log = engine.revealLog;
-        const totalQuestions = log.length;
-        const playerMap = new Map();
-
-        for (const step of log) {
-            for (const r of step.playerResults) {
-                if (!playerMap.has(r.userId)) {
-                    playerMap.set(r.userId, { name: r.name, color: r.color, roundScore: 0, roundCorrect: 0 });
-                }
-                const entry = playerMap.get(r.userId);
-                entry.roundScore += r.points;
-                if (r.correct) entry.roundCorrect++;
-            }
-        }
-
-        const playerScores = [];
-        for (const [userId, data] of playerMap) {
-            const cumulative = cumulativeScores.find(s => s.userId === userId);
-            playerScores.push({
-                name: data.name,
-                color: data.color,
-                roundScore: data.roundScore,
-                roundCorrect: data.roundCorrect,
-                cumulativeScore: cumulative?.score ?? data.roundScore
-            });
-        }
-        playerScores.sort((a, b) => b.roundScore - a.roundScore);
-
-        let hardest = null;
-        let easiest = null;
-        for (let i = 0; i < log.length; i++) {
-            const step = log[i];
-            const total = step.playerResults.filter(r => !r.timedOut).length || 1;
-            const correct = step.playerResults.filter(r => r.correct).length;
-            const pct = Math.round((correct / total) * 100);
-            const entry = { number: step.questionNumber, text: step.questionText, correctPct: pct };
-            if (!hardest || pct < hardest.correctPct) hardest = entry;
-            if (!easiest || pct > easiest.correctPct) easiest = entry;
-        }
-
-        return { totalQuestions, playerScores, hardestQuestion: hardest, easiestQuestion: easiest };
-    }
-
     _stopLiveQuiz() {
         this._timer.stop();
-        if (this._lockWarningTimer) {
-            clearTimeout(this._lockWarningTimer);
-            this._lockWarningTimer = null;
-        }
-        this._lockWarningActive = false;
+        this._clearLockWarning();
     }
 
     async close(options = {}) {
@@ -1049,9 +846,13 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (plan.action === "end-for-all") {
-            const confirmed = forced || await Dialog.confirm({
-                title: "Abandon quiz?",
-                content: "<p>End this quiz for everyone? This sitting stops, and prizes are not awarded.</p>"
+            if (!forced && isQuizModalOpen()) return;
+            const confirmed = forced || await confirmQuizModal({
+                title: "Abandon Quiz?",
+                message: "This will cancel the quiz for all players. Prizes will not be awarded.",
+                confirmLabel: "Abandon",
+                cancelLabel: "Continue Quiz",
+                confirmIcon: "fa-ban"
             });
             if (!confirmed) return;
             this._stopLiveQuiz();
@@ -1067,6 +868,10 @@ export class QuizMasterApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._unregisterSocket) {
             this._unregisterSocket();
             this._unregisterSocket = null;
+        }
+        if (this._userConnectedHook && typeof Hooks !== "undefined" && Hooks.off) {
+            Hooks.off("userConnected", this._userConnectedHook);
+            this._userConnectedHook = null;
         }
         clearActiveMasterApp();
         return super.close(options);

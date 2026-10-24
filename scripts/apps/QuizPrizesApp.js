@@ -11,7 +11,7 @@ const TIER_META = [
     { tier: "second", tierLabel: "2nd", hint: "Runner-up." },
     {
         tier: "consolation",
-        tierLabel: "Everyone",
+        tierLabel: "Runners-Up",
         hint: "Each item is minted once per player below 2nd."
     }
 ];

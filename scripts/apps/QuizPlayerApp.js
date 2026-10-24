@@ -1,11 +1,12 @@
 import { Logger } from "../lib/Logger.js";
-import { MODULE_ID } from "../data/constants.js";
+import { MODULE_ID, QUIZ_EMOTES } from "../data/constants.js";
 import { SocketHandler } from "../services/sockets/SocketHandler.js";
 import { PrizeDelivery } from "../services/PrizeDelivery.js";
 import { TimerEngine } from "../services/TimerEngine.js";
 import { clearActivePlayerApp } from "../composition/sessionState.js";
 import { planWindowClose, planPlayerSync } from "../services/SessionWindowPolicy.js";
 import { showQuizDock, hideQuizDock } from "../ui/QuizDock.js";
+import { renderEmoteWisp } from "../ui/emoteWisp.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -18,7 +19,7 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             title: "Quiz Night",
             resizable: true
         },
-        position: { width: 440, height: 640 },
+        position: { width: 680, height: 480 },
         actions: {
             "submit-text": QuizPlayerApp.#onSubmitText,
             "select-choice": QuizPlayerApp.#onSelectChoice,
@@ -27,7 +28,8 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             "confirm-tf": QuizPlayerApp.#onConfirmTF,
             "submit-number": QuizPlayerApp.#onSubmitNumber,
             "appeal": QuizPlayerApp.#onAppeal,
-            "navigate-question": QuizPlayerApp.#onNavigateQuestion
+            "navigate-question": QuizPlayerApp.#onNavigateQuestion,
+            "send-emote": QuizPlayerApp.#onSendEmote
         }
     };
 
@@ -48,13 +50,19 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _ceremonyCards = [];
     _currentMarkingStep = null;
     _pastMarkingLog = [];
+    _revealLog = [];
     _unregisterSocket = null;
     _myLastAnswer = null;
     _lockWarning = false;
+    _lockWarningRemaining = 0;
+    _lockWarningInterval = null;
     _myRoundCorrect = 0;
     _myRoundTotal = 0;
+    _myNudge = "";
+    _answeredByUser = {};
+    _lastEmoteLine = "";
 
-    /** Answer sheet: stores questionIndex -> { answer, questionText } for the current round */
+    /** Answer sheet: maps questionIndex to { answer, questionText } for the current round */
     _roundAnswerMap = new Map();
     /** All question objects shown this round (from question:show broadcasts) */
     _askedQuestions = [];
@@ -65,10 +73,18 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     /** True after the quizmaster has started this sitting, until it ends. */
     _sessionLive = false;
     _docked = false;
+    _userConnectedHook = null;
 
     constructor(options = {}) {
         super(options);
         this._unregisterSocket = SocketHandler.register((data) => this._handleSocket(data));
+        if (typeof Hooks !== "undefined" && Hooks.on) {
+            this._userConnectedHook = Hooks.on("userConnected", () => {
+                if (!this.rendered) return;
+                const focused = this.element?.querySelector?.("input:focus, textarea:focus");
+                if (!focused) this.render();
+            });
+        }
     }
 
     render(options) {
@@ -123,10 +139,14 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const questionStrip = this._buildQuestionStrip();
         const answerSheet = this._buildAnswerSheet();
+        const revealedCount = answerSheet.filter(q => q.revealed).length;
 
         const myMarkingTally = { correct: 0, total: 0, points: 0 };
         const myId = game.user.id;
-        for (const step of this._pastMarkingLog) {
+        const allRevealedSteps = (this._revealLog && this._revealLog.length)
+            ? this._revealLog
+            : [...this._pastMarkingLog, ...(this._currentMarkingStep ? [this._currentMarkingStep] : [])];
+        for (const step of allRevealedSteps) {
             const mine = step.playerResults?.find(r => r.userId === myId);
             if (mine) {
                 myMarkingTally.total++;
@@ -136,24 +156,75 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
             }
         }
-        if (this._currentMarkingStep) {
-            const mine = this._currentMarkingStep.playerResults?.find(r => r.userId === myId);
-            if (mine) {
-                myMarkingTally.total++;
-                if (mine.correct) {
-                    myMarkingTally.correct++;
-                    myMarkingTally.points += mine.points || 0;
+
+        const isQuestionPhase = this._state === "question" || this._state === "answered" || this._state === "locked";
+        const askedCount = isQuestionPhase ? (this._askedQuestions.length || (this._question ? 1 : 0)) : 0;
+        const activePlayers = (game.users || []).filter(u => !u.isGM && u.active);
+        const tableRoster = activePlayers.map(u => {
+            const userAnsweredList = Array.isArray(this._answeredByUser?.[u.id]) ? this._answeredByUser[u.id] : [];
+            const myRoundCount = u.id === myId ? Math.max(this._roundAnswerMap.size, userAnsweredList.length) : userAnsweredList.length;
+            const hasCurrent = this._question?.questionIndex !== undefined && (
+                userAnsweredList.includes(this._question.questionIndex) ||
+                (u.id === myId && (this._answeredQuestionIndex === this._question.questionIndex || this._roundAnswerMap.has(this._question.questionIndex)))
+            );
+            const answered = askedCount > 0
+                ? (myRoundCount >= askedCount || (askedCount <= 1 && hasCurrent))
+                : false;
+            return {
+                id: u.id,
+                name: u.name,
+                color: u.color || "#9ca3af",
+                isMe: u.id === myId,
+                answered
+            };
+        });
+        const tableAnsweredCount = tableRoster.filter(p => p.answered).length;
+        const viewedQI = isNavigating ? this._navigatedQuestionIndex : this._question?.questionIndex;
+        const hasAnswerForViewed = viewedQI !== undefined && viewedQI !== null && (
+            this._roundAnswerMap.has(viewedQI) ||
+            (!isNavigating && this._answeredQuestionIndex === viewedQI)
+        );
+        const effectiveState = (this._state === "question" || this._state === "answered")
+            ? (hasAnswerForViewed ? "answered" : "question")
+            : this._state;
+
+        const currentRoundNumber = this._roundInfo?.roundNumber || this._question?.roundNumber || 0;
+        const totalRounds = this._roundInfo?.totalRounds || 0;
+        const roundsMeta = Array.isArray(this._roundInfo?.roundsMeta) ? this._roundInfo.roundsMeta : [];
+        const roundTrail = [];
+        if (totalRounds > 0 && currentRoundNumber > 0) {
+            for (let r = 1; r <= totalRounds; r++) {
+                let status = "upcoming";
+                if (r < currentRoundNumber) status = "done";
+                else if (r === currentRoundNumber) {
+                    status = (this._state === "round-end") ? "just-done" : "current";
                 }
+                const meta = roundsMeta.find(m => m.number === r);
+                const knownName = (r <= currentRoundNumber)
+                    ? (meta?.name || (r === currentRoundNumber ? (this._roundInfo?.roundName || "") : ""))
+                    : "";
+                roundTrail.push({
+                    number: r,
+                    status,
+                    isCompleted: status === "done" || status === "just-done",
+                    name: knownName,
+                    tooltip: knownName ? `Round ${r}: ${knownName}` : `Round ${r}`
+                });
             }
         }
+        const isLastRound = totalRounds > 0 && currentRoundNumber >= totalRounds;
+        const nextRoundNumber = (!isLastRound && currentRoundNumber > 0) ? currentRoundNumber + 1 : null;
 
         return {
-            state: this._state,
+            state: effectiveState,
             quizName: this._quizName,
             prizes: this._prizes,
             prizeTiers: PrizeDelivery.toPrizeTierList(this._prizes),
-            ceremonyCards: this._ceremonyCards,
+            ceremonyCards: [...(this._ceremonyCards || [])].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999)),
             roundInfo: this._roundInfo,
+            roundTrail,
+            isLastRound,
+            nextRoundNumber,
             question: displayQuestion,
             answeredThisQuestion: this._answeredQuestionIndex === this._question?.questionIndex,
             timer: this._timer,
@@ -161,6 +232,11 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             timerClock: TimerEngine.formatClock(this._timer?.remaining),
             paused: this._paused,
             teaser: this._teaser,
+            myNudge: this._myNudge,
+            tableRoster,
+            tableAnsweredCount,
+            emotes: QUIZ_EMOTES,
+            lastEmoteLine: this._lastEmoteLine,
             finalReveal: this._finalReveal,
             userId: game.user.id,
             currentMarkingStep: this._currentMarkingStep,
@@ -178,12 +254,14 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             isNavigating,
             navigatedQuestionIndex: this._navigatedQuestionIndex,
             lockWarning: this._lockWarning,
+            lockWarningRemaining: this._lockWarningRemaining || 10,
             myRoundSummary: (this._state === "round-end" && this._myRoundTotal > 0)
                 ? { correct: this._myRoundCorrect, total: this._myRoundTotal, message: `You answered ${this._myRoundCorrect} of ${this._myRoundTotal} correctly this round.` }
                 : null,
             pendingChoice: this._pendingChoice,
             hasPendingChoice: this._pendingChoice !== null,
             answerSheet,
+            revealedCount,
             myMarkingTally: myMarkingTally.total > 0 ? myMarkingTally : null
         };
     }
@@ -199,6 +277,15 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                     if (answer) this._submitAnswer(answer);
                 }
             });
+        }
+
+        const currentRevealCard = this.element.querySelector(".answer-sheet-card.is-current-reveal");
+        if (currentRevealCard && typeof currentRevealCard.scrollIntoView === "function") {
+            currentRevealCard.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+
+        if (this._lockWarning) {
+            this._updateLockWarningDom();
         }
 
         PrizeDelivery.bindPrizeInspect(this.element);
@@ -245,8 +332,10 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static #onAppeal(event, target) {
         const questionIndex = Number(target.dataset.questionIndex);
         SocketHandler.submitAppeal(questionIndex);
-        if (this._currentMarkingStep) {
-            const mine = this._currentMarkingStep.playerResults?.find(r => r.userId === game.user.id);
+        const step = (this._revealLog || []).find(s => s.questionIndex === questionIndex)
+            || (this._currentMarkingStep?.questionIndex === questionIndex ? this._currentMarkingStep : null);
+        if (step) {
+            const mine = step.playerResults?.find(r => r.userId === game.user.id);
             if (mine) mine.appealed = true;
         }
         this.render();
@@ -256,6 +345,7 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const idx = Number(target.dataset.questionIndex);
         if (!Number.isFinite(idx)) return;
 
+        this._pendingChoice = null;
         const liveIndex = this._question?.questionIndex;
         if (idx === liveIndex) {
             this._navigatedQuestionIndex = null;
@@ -265,6 +355,22 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             this._navigatedQuestionIndex = idx;
         }
         this.render();
+    }
+
+    static #onSendEmote(event, target) {
+        const emoteId = target.dataset.emoteId;
+        const emote = QUIZ_EMOTES.find(e => e.id === emoteId);
+        if (!emote) return;
+        const userName = game.user?.name || "Player";
+        const color = game.user?.color || "#ffdc82";
+        if (!this._handleEmote(emote, userName, color)) return;
+        SocketHandler.sendEmote(emote.id, userName, color);
+    }
+
+    _handleEmote(emote, userName, color = "#ffdc82") {
+        const line = renderEmoteWisp(this.element, emote, userName, color);
+        if (line) this._lastEmoteLine = line;
+        return Boolean(line);
     }
 
     _submitAnswer(answer, extra = {}) {
@@ -285,10 +391,15 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (qIndex === this._question?.questionIndex) {
             this._answeredQuestionIndex = qIndex;
             this._myLastAnswer = answer;
+            this._state = "answered";
+        } else {
+            const liveQI = this._question?.questionIndex;
+            this._state = (liveQI !== undefined && (this._roundAnswerMap.has(liveQI) || this._answeredQuestionIndex === liveQI))
+                ? "answered"
+                : "question";
         }
 
         this._navigatedQuestionIndex = null;
-        this._state = "answered";
         this.render();
     }
 
@@ -302,6 +413,8 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 this._finalReveal = null;
                 this._ceremonyCards = [];
                 this._teaser = "";
+                this._myNudge = "";
+                this._answeredByUser = {};
                 this._resetMarkingState();
                 this.render({ force: true });
                 break;
@@ -315,12 +428,31 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 this._askedQuestions = [];
                 this._navigatedQuestionIndex = null;
                 this._pendingChoice = null;
-                this._lockWarning = false;
+                this._clearLockWarning();
                 this._myRoundCorrect = 0;
                 this._myRoundTotal = 0;
+                this._myNudge = "";
+                this._answeredByUser = {};
                 this._resetMarkingState();
                 this.render();
                 break;
+
+            case "answer:pulse":
+                this._answeredByUser = data.answeredByUser || {};
+                if (this.element?.contains?.(document.activeElement) && document.activeElement?.tagName === "INPUT") {
+                    break;
+                }
+                this.render();
+                break;
+
+            case "table:emote": {
+                if (data.userId && data.userId === game.user?.id) break;
+                const emote = QUIZ_EMOTES.find(e => e.id === data.emoteId);
+                if (emote) {
+                    this._handleEmote(emote, data.userName || "Player", data.color || "#ffdc82");
+                }
+                break;
+            }
 
             case "question:show":
                 this._question = data.question;
@@ -342,30 +474,52 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.render();
                 break;
 
-            case "lock:warning":
+            case "lock:warning": {
+                const secs = Number(data.seconds) || 10;
+                const wasWarning = this._lockWarning;
                 this._lockWarning = true;
-                this.render();
+                this._lockWarningRemaining = secs;
+                this._startLockWarningCountdown(secs);
+                if (!wasWarning) {
+                    this.render();
+                } else {
+                    this._updateLockWarningDom();
+                }
                 break;
+            }
 
             case "round:locked":
                 this._state = "locked";
-                this._lockWarning = false;
+                this._clearLockWarning();
                 this._resetMarkingState();
                 this.render();
                 break;
 
             case "marking:step": {
                 this._state = "marking";
+                this._clearLockWarning();
                 this._currentMarkingStep = data.currentStep;
-                this._pastMarkingLog = (data.revealLog || [])
+                this._revealLog = Array.isArray(data.revealLog) && data.revealLog.length
+                    ? data.revealLog
+                    : (data.currentStep ? [data.currentStep] : []);
+                this._pastMarkingLog = this._revealLog
                     .filter(s => s.questionIndex !== data.currentStep?.questionIndex)
                     .reverse();
                 const myId = game.user.id;
+                let roundTotal = 0;
+                let roundCorrect = 0;
+                for (const step of this._revealLog) {
+                    const mine = step.playerResults?.find(r => r.userId === myId);
+                    if (mine) {
+                        roundTotal++;
+                        if (mine.correct) roundCorrect++;
+                    }
+                }
+                this._myRoundTotal = roundTotal;
+                this._myRoundCorrect = roundCorrect;
                 if (data.currentStep?.playerResults) {
                     const mine = data.currentStep.playerResults.find(r => r.userId === myId);
                     if (mine) {
-                        this._myRoundTotal++;
-                        if (mine.correct) this._myRoundCorrect++;
                         Hooks.callAll("ionrift.quizNight.answerResult", {
                             userId: myId,
                             correct: !!mine.correct,
@@ -398,11 +552,22 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
             case "round:end":
                 this._state = "round-end";
+                if (data.roundInfo) {
+                    this._roundInfo = data.roundInfo;
+                } else if (data.roundNumber) {
+                    this._roundInfo = { ...(this._roundInfo || {}), roundNumber: data.roundNumber };
+                }
+                if (data.nudges && game.user?.id && data.nudges[game.user.id] !== undefined) {
+                    this._myNudge = data.nudges[game.user.id];
+                }
                 this.render();
                 break;
 
             case "teaser":
                 this._teaser = data.text;
+                if (data.nudges && game.user?.id && data.nudges[game.user.id] !== undefined) {
+                    this._myNudge = data.nudges[game.user.id];
+                }
                 this._state = "round-end";
                 this.render();
                 break;
@@ -471,14 +636,43 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this._timer = data.timer || this._timer;
 
         if (data.answeredByUser) {
+            this._answeredByUser = data.answeredByUser;
             const mine = data.answeredByUser[game.user.id];
             if (Array.isArray(mine) && mine.length) {
                 this._answeredQuestionIndex = mine[mine.length - 1];
             }
         }
+        if (data.nudges && game.user?.id && data.nudges[game.user.id] !== undefined) {
+            this._myNudge = data.nudges[game.user.id];
+        }
 
         if (Array.isArray(data.askedQuestions) && data.askedQuestions.length) {
             this._askedQuestions = data.askedQuestions;
+        }
+        if (data.playerAnswersByUser && game.user?.id && data.playerAnswersByUser[game.user.id]) {
+            for (const [qiStr, ans] of Object.entries(data.playerAnswersByUser[game.user.id])) {
+                const qi = Number(qiStr);
+                if (!this._roundAnswerMap.has(qi)) {
+                    const asked = this._askedQuestions.find(q => q.questionIndex === qi);
+                    this._roundAnswerMap.set(qi, { answer: ans, questionText: asked?.text || "" });
+                }
+            }
+        }
+
+        if (Array.isArray(data.revealLog) && data.revealLog.length) {
+            this._revealLog = data.revealLog;
+            const myId = game.user?.id;
+            let roundTotal = 0;
+            let roundCorrect = 0;
+            for (const step of this._revealLog) {
+                const mine = step.playerResults?.find(r => r.userId === myId);
+                if (mine) {
+                    roundTotal++;
+                    if (mine.correct) roundCorrect++;
+                }
+            }
+            this._myRoundTotal = roundTotal;
+            this._myRoundCorrect = roundCorrect;
         }
 
         if (data.state === "question" && data.question) {
@@ -489,7 +683,10 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         } else if (data.state === "marking") {
             this._state = "marking";
             this._currentMarkingStep = data.currentMarkingStep;
-            this._pastMarkingLog = (data.revealLog || [])
+            this._revealLog = Array.isArray(data.revealLog) && data.revealLog.length
+                ? data.revealLog
+                : (data.currentMarkingStep ? [data.currentMarkingStep] : []);
+            this._pastMarkingLog = this._revealLog
                 .filter(s => s.questionIndex !== data.currentMarkingStep?.questionIndex)
                 .reverse();
         } else if (data.state === "round-end") {
@@ -512,18 +709,56 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _resetMarkingState() {
         this._currentMarkingStep = null;
         this._pastMarkingLog = [];
+        this._revealLog = [];
+    }
+
+    _startLockWarningCountdown(seconds = 10) {
+        if (this._lockWarningInterval) {
+            clearInterval(this._lockWarningInterval);
+            this._lockWarningInterval = null;
+        }
+        this._lockWarningRemaining = seconds;
+        this._updateLockWarningDom();
+        this._lockWarningInterval = setInterval(() => {
+            this._lockWarningRemaining = Math.max(1, this._lockWarningRemaining - 1);
+            this._updateLockWarningDom();
+        }, 1000);
+    }
+
+    _updateLockWarningDom() {
+        const secs = this._lockWarningRemaining || 10;
+        const spans = this.element?.querySelectorAll?.(".lock-warning-seconds");
+        if (spans?.length) {
+            spans.forEach(el => {
+                el.textContent = String(secs);
+            });
+            return;
+        }
+        this.element?.querySelectorAll?.(".lock-warning-banner")?.forEach(banner => {
+            banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Pens Down in <span class="lock-warning-seconds">${secs}</span>s!`;
+        });
+    }
+
+    _clearLockWarning() {
+        if (this._lockWarningInterval) {
+            clearInterval(this._lockWarningInterval);
+            this._lockWarningInterval = null;
+        }
+        this._lockWarning = false;
+        this._lockWarningRemaining = 0;
     }
 
     _buildQuestionStrip() {
         if (!this._askedQuestions.length && this._question?.questionIndex === undefined) return [];
         const currentQI = this._question?.questionIndex ?? -1;
+        const activeViewedIndex = this._navigatedQuestionIndex !== null ? this._navigatedQuestionIndex : currentQI;
         const totalQ = this._question?.totalQuestions || this._roundInfo?.questionCount || 0;
 
         const strip = [];
         for (let i = 0; i < totalQ; i++) {
             const answered = this._roundAnswerMap.has(i);
             const isCurrent = i === currentQI;
-            const isAsked = this._askedQuestions.some(q => q.questionIndex === i);
+            const isAsked = this._askedQuestions.some(q => q.questionIndex === i) || isCurrent;
             const isNavigated = this._navigatedQuestionIndex === i;
 
             let status = "upcoming";
@@ -537,31 +772,81 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 answered,
                 isCurrent,
                 isNavigated,
-                canNavigate: isAsked && !isCurrent
+                canNavigate: isAsked && i !== activeViewedIndex
             });
         }
         return strip;
     }
 
     _buildAnswerSheet() {
-        const totalQ = this._roundInfo?.questionCount || 0;
+        const totalQ = Math.max(
+            this._roundInfo?.questionCount || 0,
+            this._askedQuestions.length,
+            (this._revealLog || []).length
+        );
         if (!totalQ) return [];
+
+        let shareAllAnswers = false;
+        try {
+            shareAllAnswers = Boolean(game.settings?.get?.(MODULE_ID, "sharePlayerAnswersOnReveal"));
+        } catch {
+            shareAllAnswers = false;
+        }
+
+        const myId = game.user?.id;
         const sheet = [];
         for (let i = 0; i < totalQ; i++) {
+            const asked = this._askedQuestions.find(q => q.questionIndex === i) || null;
+            const revealedStep = (this._revealLog || []).find(s => s.questionIndex === i)
+                || (this._currentMarkingStep?.questionIndex === i ? this._currentMarkingStep : null);
             const entry = this._roundAnswerMap.get(i);
-            let displayAnswer = null;
-            if (entry) {
-                const raw = entry.answer;
-                const asked = this._askedQuestions.find(q => q.questionIndex === i);
-                if (asked?.roundType === "multiple-choice" && typeof raw === "number" && asked.options) {
-                    displayAnswer = asked.options[raw] || String(raw);
-                } else if (asked?.roundType === "true-false") {
-                    displayAnswer = raw ? "True" : "False";
-                } else {
-                    displayAnswer = String(raw);
+            const myResult = revealedStep?.playerResults?.find(r => r.userId === myId) || null;
+            const roundType = asked?.roundType || revealedStep?.roundType || this._roundInfo?.roundType || this._roundInfo?.type;
+
+            const formatAnswer = (raw) => {
+                if (raw === null || raw === undefined || raw === "") return null;
+                if (roundType === "multiple-choice" && typeof raw === "number" && Array.isArray(asked?.options)) {
+                    return asked.options[raw] || String(raw);
                 }
+                if (roundType === "true-false" && typeof raw === "boolean") {
+                    return raw ? "True" : "False";
+                }
+                return String(raw);
+            };
+
+            let displayAnswer = null;
+            if (myResult) {
+                displayAnswer = myResult.timedOut ? null : formatAnswer(myResult.answer);
+            } else if (entry) {
+                displayAnswer = formatAnswer(entry.answer);
             }
-            sheet.push({ questionNumber: i + 1, answer: displayAnswer });
+
+            const otherResults = (shareAllAnswers && revealedStep?.playerResults)
+                ? revealedStep.playerResults
+                    .filter(r => r.userId !== myId)
+                    .map(r => ({
+                        ...r,
+                        answer: r.timedOut ? null : formatAnswer(r.answer)
+                    }))
+                : [];
+
+            sheet.push({
+                questionIndex: i,
+                questionNumber: i + 1,
+                questionText: asked?.text || revealedStep?.questionText || entry?.questionText || `Question ${i + 1}`,
+                media: asked?.media || revealedStep?.media || "",
+                answer: displayAnswer,
+                revealed: Boolean(revealedStep),
+                isCurrentReveal: Boolean(revealedStep && this._currentMarkingStep?.questionIndex === i),
+                correctAnswer: revealedStep?.correctAnswer || "",
+                correct: Boolean(myResult?.correct),
+                points: myResult?.points || 0,
+                fuzzy: Boolean(myResult?.fuzzy),
+                timedOut: Boolean(myResult ? myResult.timedOut : !displayAnswer),
+                appealed: Boolean(myResult?.appealed),
+                canAppeal: Boolean(revealedStep && myResult && !myResult.correct && !myResult.timedOut && !myResult.appealed),
+                otherResults
+            });
         }
         return sheet;
     }
@@ -601,11 +886,16 @@ export class QuizPlayerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         hideQuizDock();
+        this._clearLockWarning();
         this._docked = false;
         this._sessionLive = false;
         if (this._unregisterSocket) {
             this._unregisterSocket();
             this._unregisterSocket = null;
+        }
+        if (this._userConnectedHook && typeof Hooks !== "undefined" && Hooks.off) {
+            Hooks.off("userConnected", this._userConnectedHook);
+            this._userConnectedHook = null;
         }
         clearActivePlayerApp();
         return super.close(options);

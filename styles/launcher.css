@@ -52,8 +52,35 @@
     gap: 0.25rem;
 }
 .quiz-actions button {
-    padding: 0.3rem 0.5rem !important;
+    padding: 0.3rem 0.55rem !important;
     font-size: 0.75rem !important;
     border-radius: 4px;
-    min-height: 0 !important;
+    min-height: 28px !important;
+    min-width: 28px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.launcher-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+}
+.launcher-empty i {
+    font-size: 1.6rem;
+    color: rgba(255, 130, 200, 0.65);
+}
+.launcher-empty p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(236, 230, 244, 0.8);
 }
